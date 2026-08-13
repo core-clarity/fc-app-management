@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FC申込管理アプリ
 
-## Getting Started
+推し活のFCチケット申込調整・当落管理・公演記録を行うWebアプリ。
 
-First, run the development server:
+## 技術スタック
+
+| 役割 | 技術 |
+|------|------|
+| DB | Neon（PostgreSQL）— BPRシステムとは別プロジェクト |
+| ORM | Drizzle ORM + drizzle-kit |
+| Frontend / API | Next.js 14（App Router） |
+| Styling | Tailwind CSS |
+| Hosting | Vercel |
+| 画像解析 | Claude Vision API |
+| 認証 | NextAuth.js v5（Credentials Provider） |
+
+## STEP 1 — 基盤構築
+
+### 1. Neon プロジェクト作成
+
+1. https://console.neon.tech にログイン
+2. **New Project** → プロジェクト名例: `fc-app-management`
+3. Region は近いもの（例: `Asia Pacific (Singapore)`）を選択
+4. 作成後、**Connection string**（PostgreSQL）をコピー
+5. ローカルに `.env.local` を作成して貼り付け:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```env
+DATABASE_URL=postgresql://...@...neon.tech/neondb?sslmode=require
+AUTH_SECRET=（下記で生成）
+NEXTAUTH_URL=http://localhost:3000
+ANTHROPIC_API_KEY=sk-ant-...
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`AUTH_SECRET` の生成（PowerShell）:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```powershell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])
+```
 
-## Learn More
+または Git Bash / WSL:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+openssl rand -base64 32
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. 依存関係・マイグレーション
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install
+npx drizzle-kit generate
+npx drizzle-kit migrate
+```
 
-## Deploy on Vercel
+### 3. Views の適用
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+マイグレーション後、Neon Console → **SQL Editor** に `src/db/views.sql` の内容を貼り付けて Run する。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## データモデル概要
+
+```
+users            NextAuth用ユーザー（2名固定）
+members          名義マスタ（ownerUserId で担当ユーザー紐付け）
+productions      ツアー・演目マスタ（申し込みルールを保持）
+performances     公演日程（曜日カラムなし・SELECT時に計算）
+entries          申し込みエントリ（performance × member UNIQUE）
+```
+
+### 重要な設計ポイント
+
+- **一本釣り**はDBカラムではなく `entries_with_ikkonzuri` View で動的判定（エラーではなく情報表示）
+- **lotteryResult** に補欠（waitlist）は持たない
+- **dayOfWeek** は performances に持たず `to_char(performance_date, 'Dy')` で算出
+- 業務ルール違反は基本的に弾かずアラート表示のみ
+
+## STEP 2 — 認証・初期データ
+
+```bash
+npm run db:seed      # users / members を投入（idempotent）
+npm run dev
+```
+
+`http://localhost:3000/login` からログインできます。
+
+## npm scripts
+
+```bash
+npm run dev          # 開発サーバー
+npm run db:generate  # マイグレーションSQL生成
+npm run db:migrate   # スキーマ適用
+npm run db:studio    # Drizzle Studio
+npm run db:seed      # users / members シード
+```
+
+## 環境変数
+
+```
+DATABASE_URL=postgresql://...
+AUTH_SECRET=...
+NEXTAUTH_URL=http://localhost:3000
+ANTHROPIC_API_KEY=sk-ant-...
+```

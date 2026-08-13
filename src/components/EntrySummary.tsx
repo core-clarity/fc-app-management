@@ -1,0 +1,151 @@
+import Link from "next/link";
+import { MemberSymbol } from "@/components/MemberSymbol";
+import {
+  lotteryResultLabel,
+  paymentStatusLabel,
+} from "@/lib/labels";
+
+export type EntryMemberBrief = {
+  id: string;
+  label: string;
+  name: string;
+  symbol: string | null;
+  themeColor: string | null;
+};
+
+export type EntrySummaryData = {
+  id: string;
+  companionType: "fc_member" | "general_email" | "none";
+  companionEmail: string | null;
+  member: EntryMemberBrief;
+  companionMember: EntryMemberBrief | null;
+  /** 当落保存後のみ表示（pending のときは出さない） */
+  lotteryResult?: "pending" | "won" | "lost";
+  paymentStatus?: "not_required" | "pending" | "completed";
+};
+
+function MemberLabel({ member }: { member: EntryMemberBrief }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <MemberSymbol
+        symbol={member.symbol}
+        themeColor={member.themeColor}
+        size={18}
+      />
+      <span>
+        {member.name}
+        {member.label}
+      </span>
+    </span>
+  );
+}
+
+function companionText(entry: EntrySummaryData) {
+  if (entry.companionType === "fc_member" && entry.companionMember) {
+    return <MemberLabel member={entry.companionMember} />;
+  }
+  if (entry.companionType === "general_email" && entry.companionEmail) {
+    return <span>{entry.companionEmail}</span>;
+  }
+  return <span className="text-slate-500">未登録</span>;
+}
+
+function ResultBadges({ entry }: { entry: EntrySummaryData }) {
+  const result = entry.lotteryResult;
+  if (!result || result === "pending") return null;
+
+  const resultClass =
+    result === "won"
+      ? "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200"
+      : "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200";
+
+  return (
+    <span className="inline-flex shrink-0 flex-wrap items-center gap-1.5">
+      <span
+        className={`rounded px-2 py-0.5 text-xs font-semibold ${resultClass}`}
+      >
+        {lotteryResultLabel(result)}
+      </span>
+      {result === "won" ? (
+        <span
+          className={
+            entry.paymentStatus === "completed"
+              ? "rounded px-2 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200"
+              : "rounded px-2 py-0.5 text-xs font-semibold bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200"
+          }
+        >
+          {entry.paymentStatus === "completed"
+            ? paymentStatusLabel("completed")
+            : paymentStatusLabel("pending")}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** 申込／同行の1行表示（当落保存後は右側にバッジ） */
+export function EntrySummaryLine({ entry }: { entry: EntrySummaryData }) {
+  const result = entry.lotteryResult;
+  const showBadges = result === "won" || result === "lost";
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-ink">
+      <p className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="inline-flex flex-wrap items-center gap-1.5">
+          <span className="text-slate-500">申込：</span>
+          <MemberLabel member={entry.member} />
+        </span>
+        <span className="inline-flex flex-wrap items-center gap-1.5">
+          <span className="text-slate-500">同行：</span>
+          {companionText(entry)}
+        </span>
+      </p>
+      {showBadges ? <ResultBadges entry={entry} /> : null}
+    </div>
+  );
+}
+
+export function EntrySummaryList({
+  entries,
+  emptyLabel = "エントリなし",
+  linkToDetail = false,
+}: {
+  entries: EntrySummaryData[];
+  emptyLabel?: string;
+  /** true のとき各行に「座席・備考」リンクを付ける */
+  linkToDetail?: boolean;
+}) {
+  if (entries.length === 0) {
+    return <p className="text-sm text-slate-500">{emptyLabel}</p>;
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <p className="text-sm font-medium text-ink">
+        エントリ {entries.length} 件
+      </p>
+      <ul className="space-y-1.5">
+        {entries.map((entry) => (
+          <li
+            key={entry.id}
+            className={
+              linkToDetail
+                ? "flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                : undefined
+            }
+          >
+            <EntrySummaryLine entry={entry} />
+            {linkToDetail ? (
+              <Link
+                href={`/entries/${entry.id}`}
+                className="shrink-0 text-sm font-medium text-brand-dark underline-offset-2 hover:underline"
+              >
+                座席・備考
+              </Link>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

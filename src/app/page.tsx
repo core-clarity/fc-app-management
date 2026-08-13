@@ -1,101 +1,178 @@
-import Image from "next/image";
+import Link from "next/link";
+import { desc, eq, sql } from "drizzle-orm";
+import { auth, signOut } from "@/auth";
+import { db } from "@/db";
+import { entries, performances, productions } from "@/db/schema";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const session = await auth();
+
+  const productionList = await db
+    .select({
+      id: productions.id,
+      title: productions.title,
+      artist: productions.artist,
+      companionTiming: productions.companionTiming,
+      performanceCount: sql<number>`count(distinct ${performances.id})::int`,
+      entryCount: sql<number>`count(${entries.id})::int`,
+      pendingCount: sql<number>`count(${entries.id}) filter (where ${entries.lotteryResult} = 'pending')::int`,
+      wonCount: sql<number>`count(${entries.id}) filter (where ${entries.lotteryResult} = 'won')::int`,
+      lostCount: sql<number>`count(${entries.id}) filter (where ${entries.lotteryResult} = 'lost')::int`,
+      paidCount: sql<number>`count(${entries.id}) filter (where ${entries.lotteryResult} = 'won' and ${entries.paymentStatus} = 'completed')::int`,
+      unpaidCount: sql<number>`count(${entries.id}) filter (where ${entries.lotteryResult} = 'won' and ${entries.paymentStatus} != 'completed')::int`,
+    })
+    .from(productions)
+    .leftJoin(performances, eq(performances.productionId, productions.id))
+    .leftJoin(entries, eq(entries.performanceId, performances.id))
+    .groupBy(
+      productions.id,
+      productions.title,
+      productions.artist,
+      productions.companionTiming,
+      productions.createdAt
+    )
+    .orderBy(desc(productions.createdAt));
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
+      <div className="mx-auto max-w-3xl">
+        <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-medium tracking-wide text-brand">
+              FC申込管理
+            </p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              ダッシュボード
+            </h1>
+            <p className="mt-2 text-base text-slate-600">
+              ログイン中: {session?.user?.name ?? session?.user?.email}
+            </p>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            <button
+              type="submit"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-brand/40 hover:bg-brand-soft hover:text-brand-dark"
+            >
+              ログアウト
+            </button>
+          </form>
+        </header>
+
+        <section className="mt-8 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-ink">メニュー</h2>
+          <p className="mt-2 text-base leading-relaxed text-slate-600">
+            公演登録・公演日程・エントリ作成・当落一括入力・座席・備考が利用できます。過去データの分析は下の「分析」から。
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/productions/new"
+              className="inline-flex rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              公演を登録する
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-ink">登録済み公演</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            当落・入金の件数は全名義の合計です。
+          </p>
+          {productionList.length === 0 ? (
+            <p className="mt-3 text-base text-slate-600">
+              まだ公演がありません。「公演を登録する」から追加してください。
+            </p>
+          ) : (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {productionList.map((p) => (
+                <li key={p.id} className="py-4 first:pt-0 last:pb-0">
+                  <Link
+                    href={`/productions/${p.id}`}
+                    className="block group"
+                  >
+                    <p className="text-base font-semibold text-ink group-hover:text-brand-dark">
+                      {p.title}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {p.artist} ・ 公演 {p.performanceCount} 件 ・ 同行者
+                      {p.companionTiming === "at_entry"
+                        ? "申込時"
+                        : "公演前OK"}
+                    </p>
+                  </Link>
+                  {p.entryCount === 0 ? (
+                    <p className="mt-2 text-sm text-slate-500">エントリなし</p>
+                  ) : (
+                    <div className="mt-2 space-y-1 text-sm text-slate-700">
+                      <p>
+                        当落: 未設定 {p.pendingCount} / 当選 {p.wonCount} /
+                        落選 {p.lostCount}
+                      </p>
+                      {p.wonCount > 0 ? (
+                        <p>
+                          入金: 未入金 {p.unpaidCount} / 入金済み {p.paidCount}
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                    <Link
+                      href={`/productions/${p.id}`}
+                      className="font-medium text-brand-dark underline-offset-2 hover:underline"
+                    >
+                      公演日程
+                    </Link>
+                    <span className="text-slate-300" aria-hidden>
+                      |
+                    </span>
+                    <Link
+                      href={`/lottery/${p.id}`}
+                      className="font-medium text-brand-dark underline-offset-2 hover:underline"
+                    >
+                      当落を入力
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-ink">分析</h2>
+          <p className="mt-2 text-base leading-relaxed text-slate-600">
+            エントリーの振り返りと、生涯観覧ログの集計です。
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <span
+              className="inline-flex cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-base font-semibold text-slate-400"
+              title="STEP 7-4 で実装予定"
+            >
+              エントリーの分析（準備中）
+            </span>
+            <Link
+              href="/analytics/past"
+              className="inline-flex rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              過去データの分析
+            </Link>
+            <Link
+              href="/analytics/past/list"
+              className="inline-flex rounded-lg border border-brand/40 bg-white px-4 py-3 text-base font-semibold text-brand-dark transition hover:bg-brand-soft"
+            >
+              過去データの一覧・修正
+            </Link>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }

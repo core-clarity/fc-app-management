@@ -34,3 +34,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Build output
+.next/
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env.local
+
+# App data (不要な写真・資料)
+過去半券/
+過去半券_12-8退避
+過去半券_焼込済/
+仕様書/
+

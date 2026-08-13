@@ -3,21 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* F ロゴ（favfca.png）から抽出した青 */
+  --brand: #7193bf;
+  --brand-dark: #5d799d;
+  --brand-soft: #e5ecf3;
+  --background: #f3f5f8;
+  --foreground: #0f172a;
+  --surface: #f3f5f8;
+  --ink: #0f172a;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 @layer utilities {
