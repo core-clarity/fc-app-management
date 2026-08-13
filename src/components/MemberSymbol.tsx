@@ -27,7 +27,6 @@ const SYMBOLS: Record<SymbolKey, (color: string) => ReactNode> = {
         maskRepeat: "no-repeat",
         WebkitMaskPosition: "center",
         maskPosition: "center",
-        WebkitMaskMode: "alpha",
         maskMode: "alpha",
       }}
     />
