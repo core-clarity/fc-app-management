@@ -23,9 +23,12 @@ const prices = data
   .map((d) => d.price)
   .filter((p): p is number => typeof p === "number");
 const sum = prices.reduce((a, b) => a + b, 0);
-const sampleArtists = [
-  ...new Set(data.map((d) => d.artist).filter(Boolean)),
-].slice(0, 25);
+const sampleArtists = Array.from(
+  new Set(data.map((d) => d.artist).filter(Boolean))
+).slice(0, 25);
+
+
+
 
 console.log(
   JSON.stringify(
