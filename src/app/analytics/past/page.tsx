@@ -107,11 +107,15 @@ export default async function PastAnalyticsPage() {
             />
             <KpiCard
               label="金額合計"
-              value={Math.round(data.knownPriceSum / 1000).toLocaleString(
+              value={isViewer ? "****" : Math.round(data.knownPriceSum / 1000).toLocaleString(
                 "ja-JP"
               )}
               unit="k"
-              tip={`¥${data.knownPriceSum.toLocaleString("ja-JP")}`}
+              tip={
+                isViewer
+                  ? undefined
+                  : `¥${data.knownPriceSum.toLocaleString("ja-JP")}`
+              }
             />
           </dl>
         </header>
@@ -123,7 +127,14 @@ export default async function PastAnalyticsPage() {
               で初期投入してください。
             </p>
           ) : (
-            <PastCharts data={data} />
+            <PastCharts
+              data={
+                isViewer
+                  ? { ...data, cumulativeSpend: [], knownPriceSum: 0 }
+                  : data
+              }
+              hideCumulativeSpend={isViewer}
+            />
           )}
         </div>
       </div>

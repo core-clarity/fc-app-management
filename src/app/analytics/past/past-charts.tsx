@@ -20,6 +20,8 @@ import type { PastAnalyticsPayload, YearStack } from "@/lib/past-analytics";
 
 type Props = {
   data: PastAnalyticsPayload;
+  /** 閲覧専用: 累積支出グラフの中身だけ隠す（枠は残す） */
+  hideCumulativeSpend?: boolean;
 };
 
 type Slice = { name: string; value: number; color: string };
@@ -311,7 +313,7 @@ function YearStackBars({
   );
 }
 
-export function PastCharts({ data }: Props) {
+export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
   const artistPieData = data.artistPie.map((d) => ({
     name: d.name,
     value: d.count,
@@ -443,7 +445,13 @@ export function PastCharts({ data }: Props) {
           </Panel>
 
           <Panel title="累積支出金額の推移">
-            {cumulativeChart.length === 0 ? (
+            {hideCumulativeSpend ? (
+              <div className="flex h-64 items-center justify-center">
+                <p className="text-sm text-slate-500">
+                  閲覧専用のため金額推移は非表示です
+                </p>
+              </div>
+            ) : cumulativeChart.length === 0 ? (
               <Empty message="金額付きのデータがまだありません" />
             ) : (
               <div className="h-64 w-full">
