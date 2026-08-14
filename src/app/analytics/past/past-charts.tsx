@@ -448,7 +448,7 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
             {hideCumulativeSpend ? (
               <div className="flex h-64 items-center justify-center">
                 <p className="text-sm text-slate-500">
-                  閲覧専用のため金額推移は非表示です
+                  会員専用のため非表示です
                 </p>
               </div>
             ) : cumulativeChart.length === 0 ? (
@@ -667,7 +667,7 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
           )}
         </Panel>
 
-        <Panel title="会場別 来場回数 TOP 10">
+        <Panel title="会場別 TOP10">
           {data.venueTop10.length === 0 ? (
             <Empty />
           ) : (
