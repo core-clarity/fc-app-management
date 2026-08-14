@@ -233,8 +233,13 @@ function StylishDonut({
                 />
                 <span className="truncate">{s.name}</span>
               </span>
-              <span className="shrink-0 tabular-nums text-slate-400">
-                {s.value}（{pct}%）
+              <span className="flex shrink-0 items-baseline gap-1 tabular-nums text-slate-400">
+                <span className="inline-block min-w-[3ch] text-right">
+                  {s.value}
+                </span>
+                <span className="inline-block w-[6.5ch] text-right">
+                  （{pct.toFixed(1)}%）
+                </span>
               </span>
             </li>
           );
