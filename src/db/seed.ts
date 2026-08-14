@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
+import { PAST_VIEWER_EMAIL } from "../lib/past-owner";
 
 loadEnv({ path: ".env.local" });
 
@@ -48,6 +49,11 @@ const SEED_USERS: SeedUser[] = [
     email: "opntssm022427@gmail.com",
     name: "友人B",
     password: requireEnv("SEED_PASSWORD_FRIEND_B"),
+  },
+  {
+    email: PAST_VIEWER_EMAIL,
+    name: "過去閲覧",
+    password: requireEnv("SEED_PASSWORD_PAST_VIEWER"),
   },
 ];
 

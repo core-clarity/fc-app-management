@@ -101,7 +101,7 @@ function StylishDonut({
   slices,
   centerValue,
   centerUnit,
-  heightClass = "h-80",
+  heightClass = "sm:h-80",
   topRatios,
 }: {
   slices: Slice[];
