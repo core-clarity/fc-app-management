@@ -1,13 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useSyncExternalStore } from "react";
 import {
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
   Tooltip,
-  Legend,
   BarChart,
   Bar,
   XAxis,
@@ -35,12 +35,71 @@ function formatPct(n: number): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
-/** Recharts Legend はデフォルトで名前順。系列順（比重順）を維持する */
-function legendOrder(keys: string[]) {
-  return (item: { dataKey?: unknown; value?: unknown }) => {
-    const name = String(item.dataKey ?? item.value ?? "");
-    const i = keys.indexOf(name);
-    return i === -1 ? 999 : i;
+const NARROW_MAX_WIDTH = 639;
+
+function useNarrowViewport(): boolean {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const mq = window.matchMedia(`(max-width: ${NARROW_MAX_WIDTH}px)`);
+      mq.addEventListener("change", onStoreChange);
+      return () => mq.removeEventListener("change", onStoreChange);
+    },
+    () => window.matchMedia(`(max-width: ${NARROW_MAX_WIDTH}px)`).matches,
+    () => false
+  );
+}
+
+function ChartShell({
+  children,
+  className = "h-72",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`min-w-0 w-full max-w-full overflow-hidden ${className}`}
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        {children}
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function SeriesLegend({
+  keys,
+  colors,
+}: {
+  keys: string[];
+  colors: Record<string, string>;
+}) {
+  return (
+    <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-slate-300">
+      {keys.map((key) => (
+        <li key={key} className="flex max-w-full items-center gap-1.5">
+          <span
+            className="h-2 w-2 shrink-0 rounded-sm"
+            style={{ backgroundColor: colors[key] }}
+          />
+          <span className="truncate">{key}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function yearAxisProps(narrow: boolean) {
+  return {
+    dataKey: "year" as const,
+    stroke: "#94a3b8",
+    tick: { fontSize: narrow ? 8 : 9 },
+    angle: narrow ? -40 : -60,
+    textAnchor: "end" as const,
+    height: narrow ? 52 : 60,
+    interval: "preserveStartEnd" as const,
+    minTickGap: narrow ? 20 : 8,
+    tickFormatter: (v: string | number) => String(v).slice(2),
   };
 }
 
@@ -57,7 +116,7 @@ function Panel({
 }) {
   return (
     <section
-      className={`rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 sm:p-5 ${className}`}
+      className={`min-w-0 overflow-hidden rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 sm:p-5 ${className}`}
     >
       <h2 className="text-sm font-semibold tracking-wide text-slate-200 sm:text-base">
         {title}
@@ -116,7 +175,7 @@ function StylishDonut({
 
   return (
     <div
-      className={`flex w-full flex-col gap-4 sm:flex-row sm:items-center ${heightClass}`}
+      className={`flex min-w-0 w-full flex-col gap-4 sm:flex-row sm:items-center ${heightClass}`}
     >
       <div className="mx-auto w-full max-w-[300px] shrink-0">
         <div className="relative mx-auto aspect-square w-full">
@@ -256,26 +315,21 @@ function YearStackBars({
   stack: YearStack;
   heightClass?: string;
 }) {
+  const narrow = useNarrowViewport();
+
   if (stack.rows.length === 0) {
     return <Empty message="日付付きのデータがまだありません" />;
   }
 
   return (
-    <div className={`w-full ${heightClass}`}>
-      <ResponsiveContainer>
-        <BarChart data={stack.rows} margin={{ bottom: 4, left: 0, right: 4 }}>
+    <>
+      <ChartShell className={heightClass}>
+        <BarChart
+          data={stack.rows}
+          margin={{ bottom: narrow ? 8 : 4, left: 0, right: 4 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis
-            dataKey="year"
-            stroke="#94a3b8"
-            tick={{ fontSize: 9 }}
-            angle={-60}
-            textAnchor="end"
-            height={60}
-            interval="preserveStartEnd"
-            minTickGap={8}
-            tickFormatter={(v) => String(v).slice(2)}
-          />
+          <XAxis {...yearAxisProps(narrow)} />
           <YAxis
             stroke="#94a3b8"
             tick={{ fontSize: 11 }}
@@ -298,23 +352,91 @@ function YearStackBars({
               />
             )}
           />
-          <Legend
-            wrapperStyle={{ fontSize: 11, color: "#cbd5e1" }}
-            itemSorter={legendOrder(stack.keys)}
+          {stack.keys.map((key) => (
+            <Bar
+              key={key}
+              dataKey={key}
+              name={key}
+              stackId="a"
+              fill={stack.colors[key]}
+              isAnimationActive
+              animationDuration={900}
+              legendType="none"
+            />
+          ))}
+        </BarChart>
+      </ChartShell>
+      <SeriesLegend keys={stack.keys} colors={stack.colors} />
+    </>
+  );
+}
+
+function GenreYearBars({ stack }: { stack: YearStack }) {
+  const narrow = useNarrowViewport();
+
+  return (
+    <>
+      <ChartShell className="h-80">
+        <BarChart
+          data={stack.rows}
+          stackOffset="expand"
+          margin={{ bottom: narrow ? 8 : 4, left: 0, right: 4 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+          <XAxis {...yearAxisProps(narrow)} />
+          <YAxis
+            stroke="#94a3b8"
+            tick={{ fontSize: 11 }}
+            width={36}
+            tickFormatter={(v) => `${Math.round(Number(v) * 100)}%`}
+            domain={[0, 1]}
+          />
+          <Tooltip
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              const total = payload.reduce(
+                (sum, p) =>
+                  sum + (typeof p.value === "number" ? p.value : 0),
+                0
+              );
+              if (total <= 0) return null;
+              return (
+                <div className="rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-xs text-slate-100 shadow-lg">
+                  <p className="mb-1 font-medium text-slate-300">{label}年</p>
+                  {payload
+                    .filter(
+                      (p) => typeof p.value === "number" && p.value > 0
+                    )
+                    .map((p, i) => {
+                      const value = Number(p.value);
+                      const pct = formatPct((value / total) * 100);
+                      return (
+                        <p key={i} style={{ color: p.color ?? "#e2e8f0" }}>
+                          {p.name}: {value.toLocaleString("ja-JP")} 回（{pct}
+                          %）
+                        </p>
+                      );
+                    })}
+                </div>
+              );
+            }}
           />
           {stack.keys.map((key) => (
             <Bar
               key={key}
               dataKey={key}
-              stackId="a"
+              name={key}
+              stackId="g"
               fill={stack.colors[key]}
               isAnimationActive
               animationDuration={900}
+              legendType="none"
             />
           ))}
         </BarChart>
-      </ResponsiveContainer>
-    </div>
+      </ChartShell>
+      <SeriesLegend keys={stack.keys} colors={stack.colors} />
+    </>
   );
 }
 
@@ -347,8 +469,8 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
   }));
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-5 lg:grid-cols-2">
+    <div className="min-w-0 space-y-5">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-2">
         <Panel title="累計参加公演数（アーティスト別）">
           {artistPieData.length === 0 ? (
             <Empty />
@@ -366,7 +488,7 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
         </Panel>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-2">
         <Panel title="累計参加公演数（推し別）">
           {oshiPieData.length === 0 ? (
             <Empty message="推しが設定された公演がまだありません" />
@@ -390,22 +512,25 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
         </Panel>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        <div className="space-y-5 lg:col-span-2">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-3">
+        <div className="min-w-0 space-y-5 lg:col-span-2">
           <Panel title="推し別 年別の回数推移">
             {data.oshiYearLine.rows.length === 0 ? (
               <Empty message="推しが設定された日付付きデータがまだありません" />
             ) : (
-              <div className="h-72 w-full">
-                <ResponsiveContainer>
-                  <LineChart data={data.oshiYearLine.rows}>
+              <>
+                <ChartShell className="h-72">
+                  <LineChart
+                    data={data.oshiYearLine.rows}
+                    margin={{ bottom: 4, left: 0, right: 4 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                     <XAxis
                       dataKey="year"
                       stroke="#94a3b8"
                       tick={{ fontSize: 11 }}
                       tickFormatter={(v) => String(v).slice(2)}
-                      minTickGap={12}
+                      minTickGap={16}
                     />
                     <YAxis
                       stroke="#94a3b8"
@@ -429,23 +554,28 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
                         />
                       )}
                     />
-                    <Legend wrapperStyle={{ fontSize: 11, color: "#cbd5e1" }} />
                     {data.oshiYearLine.keys.map((key) => (
                       <Line
                         key={key}
                         type="monotone"
                         dataKey={key}
+                        name={key}
                         stroke={data.oshiYearLine.colors[key]}
                         strokeWidth={2.2}
                         dot={false}
                         activeDot={{ r: 4 }}
                         isAnimationActive
                         animationDuration={1000}
+                        legendType="none"
                       />
                     ))}
                   </LineChart>
-                </ResponsiveContainer>
-              </div>
+                </ChartShell>
+                <SeriesLegend
+                  keys={data.oshiYearLine.keys}
+                  colors={data.oshiYearLine.colors}
+                />
+              </>
             )}
           </Panel>
 
@@ -459,9 +589,11 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
             ) : cumulativeChart.length === 0 ? (
               <Empty message="金額付きのデータがまだありません" />
             ) : (
-              <div className="h-64 w-full">
-                <ResponsiveContainer>
-                  <LineChart data={cumulativeChart}>
+              <ChartShell className="h-64">
+                <LineChart
+                  data={cumulativeChart}
+                  margin={{ bottom: 4, left: 0, right: 4 }}
+                >
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                     <XAxis
                       dataKey="label"
@@ -505,8 +637,7 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
                       animationDuration={1100}
                     />
                   </LineChart>
-                </ResponsiveContainer>
-              </div>
+                </ChartShell>
             )}
           </Panel>
 
@@ -514,9 +645,11 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
             {avgPriceChart.length === 0 ? (
               <Empty message="金額付きのデータがまだありません" />
             ) : (
-              <div className="h-56 w-full">
-                <ResponsiveContainer>
-                  <LineChart data={avgPriceChart}>
+              <ChartShell className="h-56">
+                <LineChart
+                  data={avgPriceChart}
+                  margin={{ bottom: 4, left: 0, right: 4 }}
+                >
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                     <XAxis dataKey="year" stroke="#94a3b8" tick={{ fontSize: 12 }} />
                     <YAxis
@@ -553,8 +686,7 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
                       animationDuration={1000}
                     />
                   </LineChart>
-                </ResponsiveContainer>
-              </div>
+                </ChartShell>
             )}
           </Panel>
         </div>
@@ -589,86 +721,12 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
         </Panel>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-2">
         <Panel title="年別ジャンル比率">
           {data.genreYearStack.rows.length === 0 ? (
             <Empty message="日付付きのデータがまだありません" />
           ) : (
-            <div className="h-80 w-full">
-              <ResponsiveContainer>
-                <BarChart
-                  data={data.genreYearStack.rows}
-                  stackOffset="expand"
-                  margin={{ bottom: 4, left: 0, right: 4 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis
-                    dataKey="year"
-                    stroke="#94a3b8"
-                    tick={{ fontSize: 9 }}
-                    angle={-60}
-                    textAnchor="end"
-                    height={60}
-                    interval="preserveStartEnd"
-                    minTickGap={8}
-                    tickFormatter={(v) => String(v).slice(2)}
-                  />
-                  <YAxis
-                    stroke="#94a3b8"
-                    tick={{ fontSize: 11 }}
-                    width={36}
-                    tickFormatter={(v) => `${Math.round(Number(v) * 100)}%`}
-                    domain={[0, 1]}
-                  />
-                  <Tooltip
-                    content={({ active, payload, label }) => {
-                      if (!active || !payload?.length) return null;
-                      const total = payload.reduce(
-                        (sum, p) =>
-                          sum + (typeof p.value === "number" ? p.value : 0),
-                        0
-                      );
-                      if (total <= 0) return null;
-                      return (
-                        <div className="rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-xs text-slate-100 shadow-lg">
-                          <p className="mb-1 font-medium text-slate-300">
-                            {label}年
-                          </p>
-                          {payload
-                            .filter(
-                              (p) => typeof p.value === "number" && p.value > 0
-                            )
-                            .map((p, i) => {
-                              const value = Number(p.value);
-                              const pct = formatPct((value / total) * 100);
-                              return (
-                                <p key={i} style={{ color: p.color ?? "#e2e8f0" }}>
-                                  {p.name}: {value.toLocaleString("ja-JP")} 回（
-                                  {pct}%）
-                                </p>
-                              );
-                            })}
-                        </div>
-                      );
-                    }}
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: 11, color: "#cbd5e1" }}
-                    itemSorter={legendOrder(data.genreYearStack.keys)}
-                  />
-                  {data.genreYearStack.keys.map((key) => (
-                    <Bar
-                      key={key}
-                      dataKey={key}
-                      stackId="g"
-                      fill={data.genreYearStack.colors[key]}
-                      isAnimationActive
-                      animationDuration={900}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <GenreYearBars stack={data.genreYearStack} />
           )}
         </Panel>
 

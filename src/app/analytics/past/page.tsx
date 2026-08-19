@@ -27,8 +27,8 @@ export default async function PastAnalyticsPage() {
 
   if (!owner) {
     return (
-      <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100 sm:px-8">
-        <div className="mx-auto max-w-7xl">
+      <main className="min-h-screen overflow-x-hidden bg-slate-950 px-4 py-10 text-slate-100 sm:px-8">
+        <div className="mx-auto min-w-0 max-w-7xl">
           <BackHeader isViewer={isViewer} />
           <p className="mt-8 text-slate-400">
             過去ログの持ち主（{PAST_OWNER_EMAIL}）が見つかりません。seed
@@ -65,8 +65,8 @@ export default async function PastAnalyticsPage() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100 sm:px-8">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen overflow-x-hidden bg-slate-950 px-4 py-10 text-slate-100 sm:px-8">
+      <div className="mx-auto min-w-0 max-w-7xl">
         <BackHeader isViewer={isViewer} />
 
         <header className="mt-6 border-b border-slate-800 pb-6">
