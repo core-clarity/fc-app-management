@@ -730,23 +730,23 @@ export function PastCharts({ data, hideCumulativeSpend = false }: Props) {
           )}
         </Panel>
 
-        <Panel title="会場別 TOP10">
-          {data.venueTop10.length === 0 ? (
+        <Panel title="会場別 TOP20">
+          {data.venueTop20.length === 0 ? (
             <Empty />
           ) : (
-            <ol className="divide-y divide-slate-800 text-sm">
-              {data.venueTop10.map((v) => (
+            <ol className="divide-y divide-slate-800 text-[11px] leading-snug sm:text-xs">
+              {data.venueTop20.map((v) => (
                 <li
                   key={v.venue}
-                  className="flex items-baseline justify-between gap-3 py-2.5"
+                  className="flex items-baseline justify-between gap-2 py-0.5"
                 >
-                  <span className="min-w-0">
-                    <span className="mr-2 font-mono text-xs text-slate-500">
+                  <span className="min-w-0 truncate text-slate-100">
+                    <span className="mr-1.5 font-mono text-[10px] text-slate-500">
                       {String(v.rank).padStart(2, "0")}.
                     </span>
-                    <span className="text-slate-100">{v.venue}</span>
+                    {v.venue}
                   </span>
-                  <span className="shrink-0 font-medium text-sky-300">
+                  <span className="shrink-0 tabular-nums text-sky-300">
                     {v.count}回
                   </span>
                 </li>

@@ -71,7 +71,7 @@ export type PastAnalyticsPayload = {
   cumulativeSpend: CumulativePoint[];
   avgPriceByYear: YearAvgPrice[];
   genreYearStack: YearStack;
-  venueTop10: VenueRank[];
+  venueTop20: VenueRank[];
   repeatTop40: TitleRank[];
 };
 
@@ -128,6 +128,10 @@ export function artistLabel(artist: string | null | undefined): string {
 export function venueLabel(venue: string | null | undefined): string {
   const trimmed = venue?.trim();
   return trimmed ? trimmed : "不明";
+}
+
+function venueSortKey(venue: string): string {
+  return venue.replace(/^\d+\.\s*/, "").trim();
 }
 
 function yearOf(dateStr: string | null): string | null {
@@ -411,9 +415,16 @@ export function buildPastAnalytics(
     rows: genreRows,
   };
 
-  const venueTop10: VenueRank[] = Array.from(venueCounts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, 10)
+  const venueTop20: VenueRank[] = Array.from(venueCounts.entries())
+    .sort((a, b) => {
+      const countDiff = b[1] - a[1];
+      if (countDiff !== 0) return countDiff;
+      return (
+        venueSortKey(a[0]).localeCompare(venueSortKey(b[0]), "ja") ||
+        a[0].localeCompare(b[0], "ja")
+      );
+    })
+    .slice(0, 20)
     .map(([venue, count], i) => ({
       rank: i + 1,
       venue,
@@ -448,7 +459,7 @@ export function buildPastAnalytics(
     cumulativeSpend,
     avgPriceByYear,
     genreYearStack,
-    venueTop10,
+    venueTop20,
     repeatTop40,
   };
 }
