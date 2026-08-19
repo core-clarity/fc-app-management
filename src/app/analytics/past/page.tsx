@@ -100,7 +100,7 @@ export default async function PastAnalyticsPage() {
         <BackHeader isViewer={isViewer} />
 
         <header className="mt-6 border-b border-slate-800 pb-6">
-          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(400px,520px)] lg:items-start">
+          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start lg:gap-8">
             <div className="min-w-0">
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-sky-400/80">
                 Past Analytics
@@ -210,23 +210,23 @@ function LatestShowsCard({ items }: { items: LatestShow[] }) {
 
   return (
     <section className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 shrink-0 rounded border border-cyan-800/30 bg-cyan-950/50 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.2em] text-cyan-400">
+      <div className="space-y-2">
+        <span className="inline-flex rounded border border-cyan-800/30 bg-cyan-950/50 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.2em] text-cyan-400">
           LATEST
         </span>
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="min-w-0 space-y-1">
           {items.map((item) => (
             <div
               key={`${item.sortKey}-${item.title}-${item.venue}`}
-              className="flex items-center gap-3 text-[11px] leading-5 text-slate-300"
+              className="flex items-center gap-1.5 text-[11px] leading-4 text-slate-300 sm:gap-2"
             >
-              <span className="w-[72px] shrink-0 font-mono text-slate-500">
+              <span className="shrink-0 whitespace-nowrap font-mono text-slate-500">
                 {item.dateLabel}
               </span>
               <span className="min-w-0 flex-1 truncate font-medium text-slate-100">
                 {item.title}
               </span>
-              <span className="flex min-w-0 max-w-[140px] shrink-0 items-center gap-1 text-slate-400">
+              <span className="flex min-w-0 max-w-[34%] items-center gap-1 text-slate-400 sm:max-w-[180px]">
                 <LatestPinIcon color={item.pinColor} />
                 <span className="truncate">{item.venue}</span>
               </span>
