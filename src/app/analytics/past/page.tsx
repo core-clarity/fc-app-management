@@ -13,15 +13,20 @@ import { PastCharts } from "./past-charts";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_LATEST_PIN_COLOR = "#94A3B8";
+const DEFAULT_PIN_COLOR = "#94A3B8";
+const SHOW_TILE_LIMIT = 3;
 
-type LatestShow = {
+type ShowTileItem = {
   sortKey: string;
   dateLabel: string;
+  yearsAgoLabel?: string;
+  ymdLabel?: string;
   title: string;
   venue: string;
   pinColor: string;
 };
+
+type ShowTileVariant = "latest" | "rediscover";
 
 export default async function PastAnalyticsPage() {
   const session = await auth();
@@ -77,7 +82,12 @@ export default async function PastAnalyticsPage() {
   const oshiColorById = new Map(
     oshiList.map((o) => [o.id, o.themeColor] as const)
   );
-  const latestShows: LatestShow[] = rows
+  const pinColorFor = (oshiId: string | null) =>
+    oshiId
+      ? (oshiColorById.get(oshiId) ?? DEFAULT_PIN_COLOR)
+      : DEFAULT_PIN_COLOR;
+
+  const latestShows: ShowTileItem[] = rows
     .filter((row) => row.performanceDate)
     .map((row) => {
       const startTime = row.startTime?.slice(0, 5) ?? "";
@@ -86,13 +96,39 @@ export default async function PastAnalyticsPage() {
         dateLabel: formatLatestDateTime(row.performanceDate, row.startTime),
         title: row.title,
         venue: row.venue?.trim() || "会場未設定",
-        pinColor: row.oshiId
-          ? (oshiColorById.get(row.oshiId) ?? DEFAULT_LATEST_PIN_COLOR)
-          : DEFAULT_LATEST_PIN_COLOR,
+        pinColor: pinColorFor(row.oshiId),
       };
     })
     .sort((a, b) => b.sortKey.localeCompare(a.sortKey))
-    .slice(0, 3);
+    .slice(0, SHOW_TILE_LIMIT);
+
+  const { year: jstYear, mmdd: todayMmdd } = getJstTodayParts();
+  const rediscoverShows: ShowTileItem[] = rows
+    .filter((row) => {
+      if (!row.performanceDate) return false;
+      const rowYear = Number(row.performanceDate.slice(0, 4));
+      return (
+        row.performanceDate.slice(5) === todayMmdd && rowYear !== jstYear
+      );
+    })
+    .map((row) => {
+      const startTime = row.startTime?.slice(0, 5) ?? "";
+      const { yearsAgoLabel, ymdLabel } = formatRediscoverDateParts(
+        row.performanceDate!,
+        jstYear
+      );
+      return {
+        sortKey: `${row.performanceDate ?? ""} ${startTime}`,
+        dateLabel: `${yearsAgoLabel} ${ymdLabel}`,
+        yearsAgoLabel,
+        ymdLabel,
+        title: row.title,
+        venue: row.venue?.trim() || "会場未設定",
+        pinColor: pinColorFor(row.oshiId),
+      };
+    })
+    .sort((a, b) => b.sortKey.localeCompare(a.sortKey))
+    .slice(0, SHOW_TILE_LIMIT);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950 px-4 py-10 text-slate-100 sm:px-8">
@@ -109,7 +145,18 @@ export default async function PastAnalyticsPage() {
                 過去データの分析
               </h1>
             </div>
-            <LatestShowsCard items={latestShows} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <ShowTileCard
+                badge="Latest"
+                variant="latest"
+                items={latestShows}
+              />
+              <ShowTileCard
+                badge="Rediscover"
+                variant="rediscover"
+                items={rediscoverShows}
+              />
+            </div>
           </div>
 
           <dl className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -205,29 +252,61 @@ function BackHeader({ isViewer }: { isViewer: boolean }) {
   );
 }
 
-function LatestShowsCard({ items }: { items: LatestShow[] }) {
+const SHOW_TILE_BADGE_CLASS: Record<ShowTileVariant, string> = {
+  latest:
+    "border-cyan-800/30 bg-cyan-950/50 text-cyan-400",
+  rediscover:
+    "border-amber-800/30 bg-amber-950/50 text-amber-400",
+};
+
+function ShowTileCard({
+  badge,
+  variant,
+  items,
+}: {
+  badge: string;
+  variant: ShowTileVariant;
+  items: ShowTileItem[];
+}) {
   if (items.length === 0) return null;
 
   return (
     <section className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
       <div className="space-y-2">
-        <span className="inline-flex rounded border border-cyan-800/30 bg-cyan-950/50 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.2em] text-cyan-400">
-          LATEST
+        <span
+          className={`inline-flex rounded border px-1.5 py-0.5 text-[10px] font-bold tracking-wide ${SHOW_TILE_BADGE_CLASS[variant]}`}
+        >
+          {badge}
         </span>
         <div className="min-w-0 space-y-1">
           {items.map((item) => (
             <div
               key={`${item.sortKey}-${item.title}-${item.venue}`}
-              className="flex items-center gap-1.5 text-[11px] leading-4 text-slate-300 sm:gap-2"
+              className="flex items-center gap-1 text-[11px] leading-4 text-slate-300 sm:gap-1.5"
             >
-              <span className="shrink-0 whitespace-nowrap font-mono text-slate-500">
-                {item.dateLabel}
-              </span>
+              {variant === "rediscover" && item.yearsAgoLabel && item.ymdLabel ? (
+                <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums tracking-tight sm:text-[11px]">
+                  <span className="font-medium text-slate-100">
+                    {item.yearsAgoLabel}
+                  </span>
+                  <span className="text-slate-500"> {item.ymdLabel}</span>
+                </span>
+              ) : (
+                <span className="shrink-0 whitespace-nowrap font-mono text-slate-500">
+                  {item.dateLabel}
+                </span>
+              )}
               <span className="min-w-0 flex-1 truncate font-medium text-slate-100">
                 {item.title}
               </span>
-              <span className="flex min-w-0 max-w-[34%] items-center gap-1 text-slate-400 sm:max-w-[180px]">
-                <LatestPinIcon color={item.pinColor} />
+              <span
+                className={`flex min-w-0 items-center gap-1 text-slate-400 ${
+                  variant === "rediscover"
+                    ? "max-w-[26%] sm:max-w-[120px]"
+                    : "max-w-[34%] sm:max-w-[180px]"
+                }`}
+              >
+                <ShowPinIcon color={item.pinColor} />
                 <span className="truncate">{item.venue}</span>
               </span>
             </div>
@@ -238,7 +317,7 @@ function LatestShowsCard({ items }: { items: LatestShow[] }) {
   );
 }
 
-function LatestPinIcon({ color }: { color: string }) {
+function ShowPinIcon({ color }: { color: string }) {
   return (
     <svg
       aria-hidden
@@ -250,6 +329,31 @@ function LatestPinIcon({ color }: { color: string }) {
       <path d="M12 3C8.686 3 6 5.686 6 9c0 4.389 4.938 10.028 5.148 10.266a1.13 1.13 0 0 0 1.704 0C13.062 19.028 18 13.389 18 9c0-3.314-2.686-6-6-6Zm0 8.25A2.25 2.25 0 1 1 12 6.75a2.25 2.25 0 0 1 0 4.5Z" />
     </svg>
   );
+}
+
+function getJstTodayParts(): { year: number; mmdd: string } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = Number(parts.find((p) => p.type === "year")?.value ?? "0");
+  const month = parts.find((p) => p.type === "month")?.value ?? "00";
+  const day = parts.find((p) => p.type === "day")?.value ?? "00";
+  return { year, mmdd: `${month}-${day}` };
+}
+
+function formatRediscoverDateParts(
+  performanceDate: string,
+  currentYear: number
+): { yearsAgoLabel: string; ymdLabel: string } {
+  const performanceYear = Number(performanceDate.slice(0, 4));
+  const yearsAgo = currentYear - performanceYear;
+  const ymdLabel = performanceDate.replace(/-/g, "/");
+  const yearsAgoLabel =
+    yearsAgo > 0 ? `${String(yearsAgo).padStart(2, "0")}年前` : "";
+  return { yearsAgoLabel, ymdLabel };
 }
 
 function formatLatestDateTime(
