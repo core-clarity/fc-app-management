@@ -278,42 +278,61 @@ function ShowTileCard({
         >
           {badge}
         </span>
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 space-y-2 sm:space-y-1">
           {items.map((item) => (
-            <div
-              key={`${item.sortKey}-${item.title}-${item.venue}`}
-              className="flex items-center gap-1 text-[11px] leading-4 text-slate-300 sm:gap-1.5"
-            >
-              {variant === "rediscover" && item.yearsAgoLabel && item.ymdLabel ? (
-                <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums tracking-tight sm:text-[11px]">
-                  <span className="font-medium text-slate-100">
-                    {item.yearsAgoLabel}
-                  </span>
-                  <span className="text-slate-500"> {item.ymdLabel}</span>
-                </span>
-              ) : (
-                <span className="shrink-0 whitespace-nowrap font-mono text-slate-500">
-                  {item.dateLabel}
-                </span>
-              )}
-              <span className="min-w-0 flex-1 truncate font-medium text-slate-100">
-                {item.title}
-              </span>
-              <span
-                className={`flex min-w-0 items-center gap-1 text-slate-400 ${
-                  variant === "rediscover"
-                    ? "max-w-[26%] sm:max-w-[120px]"
-                    : "max-w-[34%] sm:max-w-[180px]"
-                }`}
-              >
-                <ShowPinIcon color={item.pinColor} />
-                <span className="truncate">{item.venue}</span>
-              </span>
-            </div>
+            <ShowTileRow key={`${item.sortKey}-${item.title}-${item.venue}`} variant={variant} item={item} />
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function ShowTileRow({
+  variant,
+  item,
+}: {
+  variant: ShowTileVariant;
+  item: ShowTileItem;
+}) {
+  return (
+    <div className="min-w-0 space-y-0.5 border-b border-slate-800/40 py-1.5 text-[11px] leading-4 text-slate-300 last:border-b-0 md:flex md:items-center md:gap-1.5 md:space-y-0 md:border-b-0 md:py-0">
+      <ShowTileDate variant={variant} item={item} />
+      <span className="min-w-0 font-medium text-slate-100 md:flex-1 md:truncate">
+        {item.title}
+      </span>
+      <span
+        className={`flex min-w-0 items-center gap-1 text-slate-400 ${
+          variant === "rediscover" ? "md:max-w-[120px]" : "md:max-w-[180px]"
+        }`}
+      >
+        <ShowPinIcon color={item.pinColor} />
+        <span className="truncate">{item.venue}</span>
+      </span>
+    </div>
+  );
+}
+
+function ShowTileDate({
+  variant,
+  item,
+}: {
+  variant: ShowTileVariant;
+  item: ShowTileItem;
+}) {
+  if (variant === "rediscover" && item.yearsAgoLabel && item.ymdLabel) {
+    return (
+      <span className="block shrink-0 whitespace-nowrap text-[10px] tabular-nums tracking-tight md:text-[11px]">
+        <span className="font-medium text-slate-100">{item.yearsAgoLabel}</span>
+        <span className="text-slate-500"> {item.ymdLabel}</span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="block shrink-0 whitespace-nowrap font-mono text-slate-500">
+      {item.dateLabel}
+    </span>
   );
 }
 
