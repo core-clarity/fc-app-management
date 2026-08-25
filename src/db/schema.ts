@@ -91,7 +91,7 @@ export const members = pgTable("members", {
     .notNull()
     .default(true),
   isActive: boolean("is_active").notNull().default(true),
-  symbol: text("symbol"), // 'cat' | 'crescent' など
+  symbol: text("symbol"), // カタログキー: cat | cra | cup | hit | crescent
   themeColor: text("theme_color"), // 例: '#F472B6'
 });
 
@@ -192,6 +192,21 @@ export const oshiArtists = pgTable("oshi_artists", {
   themeColor: text("theme_color").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
+});
+
+// -----------------------------------------------
+// アーティスト色マスタ（券面表記 past_attendances.artist と一致）
+// 表記ゆれは別行で同じ色を持つ
+// -----------------------------------------------
+
+export const artistThemes = pgTable("artist_themes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  label: text("label").notNull().unique(),
+  themeColor: text("theme_color").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // -----------------------------------------------
@@ -331,6 +346,9 @@ export type NewEntry = typeof entries.$inferInsert;
 
 export type OshiArtist = typeof oshiArtists.$inferSelect;
 export type NewOshiArtist = typeof oshiArtists.$inferInsert;
+
+export type ArtistTheme = typeof artistThemes.$inferSelect;
+export type NewArtistTheme = typeof artistThemes.$inferInsert;
 
 export type PastAttendance = typeof pastAttendances.$inferSelect;
 export type NewPastAttendance = typeof pastAttendances.$inferInsert;

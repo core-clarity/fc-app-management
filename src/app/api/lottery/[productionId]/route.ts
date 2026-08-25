@@ -107,9 +107,11 @@ export async function POST(request: Request, context: RouteContext) {
     });
   }
 
-  const production = await db.query.productions.findFirst({
-    where: eq(productions.id, productionId),
-  });
+  const [production] = await db
+    .select({ id: productions.id })
+    .from(productions)
+    .where(eq(productions.id, productionId))
+    .limit(1);
   if (!production) {
     return Response.json({ error: "公演が見つかりません。" }, { status: 404 });
   }

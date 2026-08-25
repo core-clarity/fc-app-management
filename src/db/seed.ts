@@ -124,6 +124,25 @@ const SEED_OSHI: SeedOshi[] = [
 /** グループ名は推しメンではないため非表示（既存行は is_active=false） */
 const DEACTIVATE_OSHI_LABELS = ["V6", "PrincessPrincess"] as const;
 
+type SeedArtistTheme = {
+  label: string;
+  themeColor: string;
+  sortOrder: number;
+};
+
+/** 券面アーティスト色（表記ゆれは別行・同色） */
+const SEED_ARTIST_THEMES: SeedArtistTheme[] = [
+  { label: "V6", themeColor: "#FFA500", sortOrder: 10 },
+  { label: "PrincessPrincess", themeColor: "#FF69B4", sortOrder: 20 },
+  { label: "PRINCESS PRINCESS", themeColor: "#FF69B4", sortOrder: 21 },
+  { label: "20th Century", themeColor: "#00FF00", sortOrder: 30 },
+  { label: "20thCentury", themeColor: "#00FF00", sortOrder: 31 },
+  { label: "Coming Century", themeColor: "#FFFF00", sortOrder: 40 },
+  { label: "ComingCentury", themeColor: "#FFFF00", sortOrder: 41 },
+  { label: "B&ZAI", themeColor: "#E11D48", sortOrder: 50 },
+  { label: "B & ZAI", themeColor: "#E11D48", sortOrder: 51 },
+];
+
 async function upsertUser(user: SeedUser) {
   const passwordHash = await bcrypt.hash(user.password, 10);
   const existing = await db.query.users.findFirst({
@@ -220,8 +239,39 @@ async function upsertOshi(oshi: SeedOshi) {
   return inserted.id;
 }
 
+async function upsertArtistTheme(theme: SeedArtistTheme) {
+  const existing = await db.query.artistThemes.findFirst({
+    where: eq(schema.artistThemes.label, theme.label),
+  });
+
+  const values = {
+    themeColor: theme.themeColor,
+    sortOrder: theme.sortOrder,
+    isActive: true,
+    updatedAt: new Date(),
+  };
+
+  if (existing) {
+    await db
+      .update(schema.artistThemes)
+      .set(values)
+      .where(eq(schema.artistThemes.id, existing.id));
+    return existing.id;
+  }
+
+  const [inserted] = await db
+    .insert(schema.artistThemes)
+    .values({
+      label: theme.label,
+      ...values,
+    })
+    .returning({ id: schema.artistThemes.id });
+
+  return inserted.id;
+}
+
 async function main() {
-  console.log("Seeding users, members, and oshi artists...");
+  console.log("Seeding users, members, oshi artists, and artist themes...");
 
   const ownerIdByEmail = new Map<string, string>();
   for (const user of SEED_USERS) {
@@ -249,6 +299,11 @@ async function main() {
     if (result.length > 0) {
       console.log(`oshi deactivated: ${label}`);
     }
+  }
+
+  for (const theme of SEED_ARTIST_THEMES) {
+    await upsertArtistTheme(theme);
+    console.log(`artist theme: ${theme.label} (${theme.themeColor})`);
   }
 
   console.log("Seed completed.");

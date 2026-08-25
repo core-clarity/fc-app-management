@@ -1,37 +1,4 @@
-import type { ReactNode } from "react";
-
-type SymbolKey = "cat" | "crescent";
-
-const SYMBOLS: Record<SymbolKey, (color: string) => ReactNode> = {
-  // GitHub Octocat のように、耳＋丸い顔がはっきりした猫シルエット
-  cat: (color) => (
-    <svg viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg">
-      <path d="M3.8 10.2 7.6 2.4c.4-.7 1.4-.5 1.55.3L10.5 10 3.8 10.2z" />
-      <path d="M20.2 10.2 16.4 2.4c-.4-.7-1.4-.5-1.55.3L13.5 10 20.2 10.2z" />
-      <ellipse cx="12" cy="14.4" rx="8.4" ry="7.6" />
-    </svg>
-  ),
-  // 添付画像の正円＋右三日月をマスクとして使う（テーマ色が本体・三日月は透過＝白地）
-  crescent: (color) => (
-    <span
-      style={{
-        display: "block",
-        width: "100%",
-        height: "100%",
-        backgroundColor: color,
-        WebkitMaskImage: "url(/member-symbols/crescent-mask.png)",
-        maskImage: "url(/member-symbols/crescent-mask.png)",
-        WebkitMaskSize: "contain",
-        maskSize: "contain",
-        WebkitMaskRepeat: "no-repeat",
-        maskRepeat: "no-repeat",
-        WebkitMaskPosition: "center",
-        maskPosition: "center",
-        maskMode: "alpha",
-      }}
-    />
-  ),
-};
+import { getMemberSymbol } from "@/lib/member-symbols";
 
 function isLightColor(hex: string): boolean {
   const normalized = hex.replace("#", "");
@@ -51,12 +18,10 @@ export function MemberSymbol({
   themeColor: string | null | undefined;
   size?: number;
 }) {
-  if (!symbol || !themeColor) return null;
-  const render = SYMBOLS[symbol as SymbolKey];
-  if (!render) return null;
+  const entry = getMemberSymbol(symbol);
+  if (!entry || !themeColor) return null;
 
-  const isCrescent = symbol === "crescent";
-  const needsOutline = !isCrescent && isLightColor(themeColor);
+  const needsOutline = isLightColor(themeColor);
   const bg = needsOutline ? "#64748b" : "transparent";
 
   return (
@@ -71,9 +36,23 @@ export function MemberSymbol({
       }}
       aria-hidden
     >
-      <span style={{ width: "100%", height: "100%", display: "block" }}>
-        {render(themeColor)}
-      </span>
+      <span
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          backgroundColor: themeColor,
+          WebkitMaskImage: `url(${entry.src})`,
+          maskImage: `url(${entry.src})`,
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+          maskMode: "alpha",
+        }}
+      />
     </span>
   );
 }

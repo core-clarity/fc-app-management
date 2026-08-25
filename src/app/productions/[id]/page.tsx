@@ -28,9 +28,11 @@ const companionMembers = alias(members, "companion_members");
 export default async function ProductionDetailPage({ params }: PageProps) {
   noStore();
 
-  const production = await db.query.productions.findFirst({
-    where: eq(productions.id, params.id),
-  });
+  const [production] = await db
+    .select()
+    .from(productions)
+    .where(eq(productions.id, params.id))
+    .limit(1);
 
   if (!production) {
     notFound();
@@ -193,12 +195,12 @@ export default async function ProductionDetailPage({ params }: PageProps) {
           <p className="mt-4 text-sm text-slate-500">
             公演 {performanceRows.length} 件 / エントリ合計 {totalEntries} 件
           </p>
-          <div className="mt-5">
+          <div className="mt-5 flex justify-end">
             <Link
               href={`/lottery/${production.id}`}
               className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              当落を入力する
+              担当名義の当落入力
             </Link>
           </div>
         </section>

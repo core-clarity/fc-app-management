@@ -1,3 +1,9 @@
+import {
+  assignSeriesColors,
+  resolveThemeColor,
+  SPECIAL_THEME_COLORS,
+} from "@/lib/theme-colors";
+
 export type PastGenre = "concert" | "stage" | "other";
 
 export type PastAttendanceRow = {
@@ -12,6 +18,11 @@ export type PastAttendanceRow = {
 
 export type OshiRef = {
   id: string;
+  label: string;
+  themeColor: string;
+};
+
+export type ArtistThemeRef = {
   label: string;
   themeColor: string;
 };
@@ -75,37 +86,6 @@ export type PastAnalyticsPayload = {
   repeatTop40: TitleRank[];
 };
 
-const FALLBACK_PALETTE = [
-  "#F97316",
-  "#EC4899",
-  "#3B82F6",
-  "#22C55E",
-  "#A855F7",
-  "#EAB308",
-  "#14B8A6",
-  "#F43F5E",
-  "#8B5CF6",
-  "#06B6D4",
-  "#84CC16",
-  "#FB7185",
-  "#38BDF8",
-  "#FBBF24",
-  "#C084FC",
-];
-
-/** アーティスト（券面表記）専用色。推しマスタとは別（グループ名など） */
-const ARTIST_THEME_COLORS: Record<string, string> = {
-  V6: "#ffa500",
-  PrincessPrincess: "#ff69b4",
-  "PRINCESS PRINCESS": "#ff69b4",
-  "20th Century": "#00ff00",
-  "20thCentury": "#00ff00",
-  "Coming Century": "#ffff00",
-  ComingCentury: "#ffff00",
-  "B&ZAI": "#E11D48",
-  "B & ZAI": "#E11D48",
-};
-
 const GENRE_LABEL: Record<PastGenre, string> = {
   concert: "コンサート",
   stage: "演劇・ミュージカル",
@@ -151,31 +131,19 @@ function titleKey(title: string | null | undefined): string {
   return (title ?? "").trim().replace(/\s+/g, " ");
 }
 
-function colorForArtist(
-  name: string,
-  oshiColorByLabel: Map<string, string>,
-  index: number
-): string {
-  if (name === "不明") return "#64748B";
-  if (name === "Others") return "#475569";
-  const fromArtist = ARTIST_THEME_COLORS[name];
-  if (fromArtist) return fromArtist;
-  const fromOshi = oshiColorByLabel.get(name);
-  if (fromOshi) return fromOshi;
-  return FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
-}
-
 function colorForOshi(
   name: string,
-  oshiColorByLabel: Map<string, string>,
-  index: number
+  oshiColorByLabel: Map<string, string>
 ): string {
-  if (name === "不明") return "#64748B";
-  if (name === "Others") return "#475569";
-  return (
-    oshiColorByLabel.get(name) ??
-    FALLBACK_PALETTE[index % FALLBACK_PALETTE.length]
-  );
+  return resolveThemeColor(oshiColorByLabel.get(name), name);
+}
+
+function artistExplicitColor(
+  name: string,
+  artistColorByLabel: Map<string, string>,
+  oshiColorByLabel: Map<string, string>
+): string | null {
+  return artistColorByLabel.get(name) ?? oshiColorByLabel.get(name) ?? null;
 }
 
 function topNWithOthers(
@@ -205,15 +173,15 @@ function buildYearStack(
   yearKeyCounts: Map<string, Map<string, number>>,
   totalCounts: Map<string, number>,
   topN: number,
-  colorFor: (name: string, index: number) => string
+  colorFor: (name: string) => string
 ): YearStack {
   if (years.length === 0 || totalCounts.size === 0) return emptyYearStack();
 
   const pack = topNWithOthers(totalCounts, topN);
   const keys = pack.names;
   const colors: Record<string, string> = {};
-  keys.forEach((name, i) => {
-    colors[name] = colorFor(name, i);
+  keys.forEach((name) => {
+    colors[name] = colorFor(name);
   });
 
   const rows: Array<Record<string, string | number>> = years.map((year) => {
@@ -239,11 +207,15 @@ function buildYearStack(
 
 export function buildPastAnalytics(
   rows: PastAttendanceRow[],
-  oshiList: OshiRef[] = []
+  oshiList: OshiRef[] = [],
+  artistThemes: ArtistThemeRef[] = []
 ): PastAnalyticsPayload {
   const oshiById = new Map(oshiList.map((o) => [o.id, o] as const));
   const oshiColorByLabel = new Map(
     oshiList.map((o) => [o.label, o.themeColor] as const)
+  );
+  const artistColorByLabel = new Map(
+    artistThemes.map((a) => [a.label, a.themeColor] as const)
   );
 
   const artistCounts = new Map<string, number>();
@@ -306,10 +278,17 @@ export function buildPastAnalytics(
     minYear != null && maxYear != null ? yearsInRange(minYear, maxYear) : [];
 
   const piePack = topNWithOthers(artistCounts, 8);
-  const artistPie: NamedCount[] = piePack.names.map((name, i) => ({
+  const stackPack = topNWithOthers(artistCounts, 6);
+  const artistSeriesColors = assignSeriesColors(
+    Array.from(new Set([...piePack.names, ...stackPack.names])),
+    (name) =>
+      artistExplicitColor(name, artistColorByLabel, oshiColorByLabel)
+  );
+  const artistPie: NamedCount[] = piePack.names.map((name) => ({
     name,
     count: piePack.counts.get(name) ?? 0,
-    color: colorForArtist(name, oshiColorByLabel, i),
+    color:
+      artistSeriesColors.get(name) ?? SPECIAL_THEME_COLORS.others,
   }));
 
   const artistYearStack = buildYearStack(
@@ -317,14 +296,15 @@ export function buildPastAnalytics(
     yearArtist,
     artistCounts,
     6,
-    (name, i) => colorForArtist(name, oshiColorByLabel, i)
+    (name) =>
+      artistSeriesColors.get(name) ?? SPECIAL_THEME_COLORS.others
   );
 
   const oshiPiePack = topNWithOthers(oshiCounts, Math.max(oshiCounts.size, 1));
-  const oshiPie: NamedCount[] = oshiPiePack.names.map((name, i) => ({
+  const oshiPie: NamedCount[] = oshiPiePack.names.map((name) => ({
     name,
     count: oshiPiePack.counts.get(name) ?? 0,
-    color: colorForOshi(name, oshiColorByLabel, i),
+    color: colorForOshi(name, oshiColorByLabel),
   }));
 
   const oshiTopN = oshiCounts.size <= 6 ? Math.max(oshiCounts.size, 1) : 6;
@@ -333,7 +313,7 @@ export function buildPastAnalytics(
     yearOshi,
     oshiCounts,
     oshiTopN,
-    (name, i) => colorForOshi(name, oshiColorByLabel, i)
+    (name) => colorForOshi(name, oshiColorByLabel)
   );
   const oshiYearLine = oshiYearStack;
 

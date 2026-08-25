@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { auth, signOut } from "@/auth";
 import { db } from "@/db";
-import { oshiArtists, pastAttendances, users } from "@/db/schema";
+import {
+  artistThemes,
+  oshiArtists,
+  pastAttendances,
+  users,
+} from "@/db/schema";
 import { buildPastAnalytics } from "@/lib/past-analytics";
 import {
   isPastViewerEmail,
@@ -54,7 +59,7 @@ export default async function PastAnalyticsPage() {
     );
   }
 
-  const [rows, oshiList] = await Promise.all([
+  const [rows, oshiList, artistThemeList] = await Promise.all([
     db
       .select({
         artist: pastAttendances.artist,
@@ -69,6 +74,7 @@ export default async function PastAnalyticsPage() {
       .from(pastAttendances)
       .where(eq(pastAttendances.ownerUserId, owner.id)),
     db.select().from(oshiArtists),
+    db.select().from(artistThemes),
   ]);
 
   const data = buildPastAnalytics(
@@ -77,7 +83,13 @@ export default async function PastAnalyticsPage() {
       id: o.id,
       label: o.label,
       themeColor: o.themeColor,
-    }))
+    })),
+    artistThemeList
+      .filter((a) => a.isActive)
+      .map((a) => ({
+        label: a.label,
+        themeColor: a.themeColor,
+      }))
   );
   const oshiColorById = new Map(
     oshiList.map((o) => [o.id, o.themeColor] as const)

@@ -164,6 +164,21 @@ export default async function HomePage() {
             >
               過去データの分析
             </Link>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-ink">管理</h2>
+          <p className="mt-2 text-base leading-relaxed text-slate-600">
+            見た目の設定と、過去観覧ログの修正です。
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <Link
+              href="/settings/appearance"
+              className="inline-flex rounded-lg border border-brand/40 bg-white px-4 py-3 text-base font-semibold text-brand-dark transition hover:bg-brand-soft"
+            >
+              色・アイコン管理
+            </Link>
             <Link
               href="/analytics/past/list"
               className="inline-flex rounded-lg border border-brand/40 bg-white px-4 py-3 text-base font-semibold text-brand-dark transition hover:bg-brand-soft"

@@ -5,6 +5,36 @@ import { entries, members, performances, productions } from "@/db/schema";
 
 const companionMembers = alias(members, "companion_members");
 
+async function withDbRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 200 * (i + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+async function loadProductionById(productionId: string) {
+  return withDbRetry(async () => {
+    const [row] = await db
+      .select({
+        id: productions.id,
+        title: productions.title,
+        artist: productions.artist,
+      })
+      .from(productions)
+      .where(eq(productions.id, productionId))
+      .limit(1);
+    return row ?? null;
+  });
+}
+
 export type LotteryResult = "pending" | "won" | "lost";
 export type PaymentStatus = "not_required" | "pending" | "completed";
 
@@ -51,9 +81,7 @@ export async function loadLotteryContext(
   productionId: string,
   userId: string
 ): Promise<LotteryContext | null> {
-  const production = await db.query.productions.findFirst({
-    where: eq(productions.id, productionId),
-  });
+  const production = await loadProductionById(productionId);
   if (!production) return null;
 
   const ownedMembers = await db

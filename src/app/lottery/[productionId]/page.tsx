@@ -11,6 +11,15 @@ type PageProps = {
   params: { productionId: string };
 };
 
+function dbErrorDetail(error: unknown): string {
+  if (!error || typeof error !== "object") return "不明なエラー";
+  const e = error as { message?: string; cause?: unknown };
+  if (e.cause instanceof Error && e.cause.message) return e.cause.message;
+  if (typeof e.cause === "string") return e.cause;
+  if (typeof e.message === "string") return e.message;
+  return "不明なエラー";
+}
+
 export default async function LotteryPage({ params }: PageProps) {
   noStore();
 
@@ -19,7 +28,54 @@ export default async function LotteryPage({ params }: PageProps) {
     redirect("/login");
   }
 
-  const data = await loadLotteryContext(params.productionId, session.user.id);
+  let data;
+  try {
+    data = await loadLotteryContext(params.productionId, session.user.id);
+  } catch (error) {
+    console.error("loadLotteryContext failed:", error);
+    const detail = dbErrorDetail(error);
+    return (
+      <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
+        <div className="mx-auto max-w-3xl">
+          <header className="border-b border-slate-200 pb-6">
+            <Link
+              href={`/productions/${params.productionId}`}
+              className="inline-flex items-center text-base font-semibold text-brand-dark underline-offset-2 hover:underline"
+            >
+              ← 公演日程へ
+            </Link>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
+              当落一括入力
+            </h1>
+          </header>
+          <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-6 text-red-900">
+            <p className="font-semibold">データの読み込みに失敗しました。</p>
+            <p className="mt-2 text-sm text-red-800/90">
+              一時的な接続エラーのことがあります。ページを再読み込みしてください。
+            </p>
+            <p className="mt-3 break-all font-mono text-xs text-red-700/80">
+              {detail}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href={`/lottery/${params.productionId}`}
+                className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark"
+              >
+                再読み込み
+              </Link>
+              <Link
+                href={`/productions/${params.productionId}`}
+                className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700"
+              >
+                公演日程へ戻る
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (!data) {
     notFound();
   }

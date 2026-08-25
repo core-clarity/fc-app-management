@@ -112,7 +112,7 @@ export function EntrySummaryList({
 }: {
   entries: EntrySummaryData[];
   emptyLabel?: string;
-  /** true のとき各行に「座席・備考」リンクを付ける */
+  /** true のとき各行に「座席・備考」ボタンを付ける */
   linkToDetail?: boolean;
 }) {
   if (entries.length === 0) {
@@ -138,7 +138,7 @@ export function EntrySummaryList({
             {linkToDetail ? (
               <Link
                 href={`/entries/${entry.id}`}
-                className="shrink-0 text-sm font-medium text-brand-dark underline-offset-2 hover:underline"
+                className="inline-flex shrink-0 self-end items-center justify-center rounded-lg border border-brand bg-white px-3 py-1.5 text-sm font-semibold text-brand-dark transition hover:bg-brand/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:self-auto"
               >
                 座席・備考
               </Link>
