@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "現場管理システム",
+  title: "おたくの現場",
   description: "FCチケット申込調整・当落管理・公演記録",
 };
 

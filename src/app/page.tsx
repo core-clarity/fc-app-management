@@ -41,7 +41,7 @@ export default async function HomePage() {
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-              現場管理システム
+              おたくの現場
             </h1>
             <p className="mt-1 text-sm font-medium tracking-wide text-brand">
               チケット申込・当落・公演記録
@@ -71,7 +71,7 @@ export default async function HomePage() {
         <section className="mt-8 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
           <h2 className="text-lg font-semibold text-ink">メニュー</h2>
           <p className="mt-2 text-base leading-relaxed text-slate-600">
-            公演登録・公演日程・エントリ作成・当落一括入力・座席・備考が利用できます。過去データの分析は下の「分析」から。
+            公演登録・公演日程・エントリ作成・当落一括入力・エントリ詳細（座席・金額）が利用できます。過去データの分析は下の「分析」から。
           </p>
           <div className="mt-6">
             <Link

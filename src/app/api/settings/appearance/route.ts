@@ -51,6 +51,7 @@ export async function GET() {
           name: members.name,
           symbol: members.symbol,
           themeColor: members.themeColor,
+          canPassIdVerification: members.canPassIdVerification,
           isActive: members.isActive,
         })
         .from(members)

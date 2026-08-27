@@ -41,7 +41,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const record = body as Record<string, unknown>;
-  const patch: { symbol?: string | null; themeColor?: string | null } = {};
+  const patch: {
+    symbol?: string | null;
+    themeColor?: string | null;
+    canPassIdVerification?: boolean;
+  } = {};
 
   if (Object.prototype.hasOwnProperty.call(record, "symbol")) {
     if (record.symbol === null || record.symbol === "") {
@@ -67,6 +71,16 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
   }
 
+  if (Object.prototype.hasOwnProperty.call(record, "canPassIdVerification")) {
+    if (typeof record.canPassIdVerification !== "boolean") {
+      return Response.json(
+        { error: "canPassIdVerification が不正です。" },
+        { status: 400 }
+      );
+    }
+    patch.canPassIdVerification = record.canPassIdVerification;
+  }
+
   if (Object.keys(patch).length === 0) {
     return Response.json({ error: "更新内容がありません。" }, { status: 400 });
   }
@@ -88,6 +102,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       name: members.name,
       symbol: members.symbol,
       themeColor: members.themeColor,
+      canPassIdVerification: members.canPassIdVerification,
       isActive: members.isActive,
     });
 

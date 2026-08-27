@@ -37,7 +37,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm sm:p-10">
         <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          現場管理システム
+          おたくの現場
         </h1>
         <p className="mt-1 text-sm font-medium tracking-wide text-brand">
           チケット申込・当落・公演記録

@@ -46,7 +46,7 @@ export default async function EntryDetailPage({ params }: PageProps) {
           />
           <div className="mt-3">
             <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-              座席・備考
+              エントリ詳細
             </h1>
             <p className="mt-2 text-base text-slate-600">
               座席の記録と、制作開放（落選→当選）の対応を行います。

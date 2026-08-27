@@ -11,6 +11,7 @@ type MemberRow = {
   name: string;
   symbol: string | null;
   themeColor: string | null;
+  canPassIdVerification: boolean;
   isActive: boolean;
 };
 
@@ -99,7 +100,11 @@ export function AppearanceSettingsClient() {
 
   async function saveMember(
     id: string,
-    patch: { symbol?: string | null; themeColor?: string | null }
+    patch: {
+      symbol?: string | null;
+      themeColor?: string | null;
+      canPassIdVerification?: boolean;
+    }
   ) {
     setBusy(true);
     setError(null);
@@ -337,9 +342,9 @@ export function AppearanceSettingsClient() {
       ) : null}
 
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
-        <h2 className="text-lg font-semibold text-ink">名義（アイコン・色）</h2>
+        <h2 className="text-lg font-semibold text-ink">名義（アイコン・色・顔認証）</h2>
         <p className="mt-1 text-sm text-slate-500">
-          申込一覧などで使う小さな記号です。
+          申込一覧などで使う記号と、顔認証公演で使えるかどうかを設定します。
         </p>
         <ul className="mt-6 divide-y divide-slate-100">
           {data.members.map((m) => (
@@ -450,16 +455,21 @@ function MemberEditor({
   onSave: (patch: {
     symbol?: string | null;
     themeColor?: string | null;
+    canPassIdVerification?: boolean;
   }) => void;
 }) {
   const [symbol, setSymbol] = useState(member.symbol ?? "");
   const [color, setColor] = useState(
     member.themeColor ?? autoThemeColor(`member:${member.id}`)
   );
+  const [canPassIdVerification, setCanPassIdVerification] = useState(
+    member.canPassIdVerification
+  );
 
   useEffect(() => {
     setSymbol(member.symbol ?? "");
     setColor(member.themeColor ?? autoThemeColor(`member:${member.id}`));
+    setCanPassIdVerification(member.canPassIdVerification);
   }, [member]);
 
   return (
@@ -479,7 +489,12 @@ function MemberEditor({
               </span>
             ) : null}
           </p>
-          <p className="text-sm text-slate-500">{member.name}</p>
+          <p className="text-sm text-slate-500">
+            {member.name}
+            {!member.canPassIdVerification ? (
+              <span className="ml-2 text-amber-700">・顔認証不可</span>
+            ) : null}
+          </p>
         </div>
       </div>
 
@@ -517,6 +532,16 @@ function MemberEditor({
           <p className="mb-1 text-sm font-medium text-slate-700">色</p>
           <ColorField value={color} onChange={setColor} disabled={disabled} />
         </div>
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={canPassIdVerification}
+            disabled={disabled || !member.isActive}
+            onChange={(e) => setCanPassIdVerification(e.target.checked)}
+            className="h-4 w-4 accent-[var(--brand)]"
+          />
+          顔認証を通過できる
+        </label>
         <button
           type="button"
           disabled={disabled}
@@ -524,6 +549,7 @@ function MemberEditor({
             onSave({
               symbol: symbol || null,
               themeColor: color,
+              canPassIdVerification,
             })
           }
           className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"

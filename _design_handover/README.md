@@ -56,7 +56,7 @@ entries          申し込みエントリ（performance × member）
 ## 画面構成（予定）
 
 ```
-/                       現場管理システム（公演一覧・機能への導線）
+/                       おたくの現場（公演一覧・機能への導線）
 /productions            ツアー・演目一覧
 /productions/new        ツアー・演目登録（スクショアップロード → 日程自動読み取り）
 /productions/[id]       公演日程一覧 + エントリ状況

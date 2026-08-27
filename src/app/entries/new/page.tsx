@@ -387,7 +387,7 @@ function NewEntryForm() {
                     href={`/entries/${entry.id}`}
                     className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-brand-dark transition hover:bg-brand-soft"
                   >
-                    座席・備考
+                    座席・金額
                   </Link>
                   <button
                     type="button"
