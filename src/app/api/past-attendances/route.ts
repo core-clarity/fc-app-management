@@ -202,6 +202,29 @@ export async function POST(request: Request) {
     return Response.json({ error: "price が不正です。" }, { status: 400 });
   }
 
+  const sourceImageIndex = nullIfBlank(body.sourceImageIndex);
+  const useTicketScan = body.sourceType === "ticket_scan" && !!sourceImageIndex;
+  const sourceType = useTicketScan ? ("ticket_scan" as const) : ("manual" as const);
+
+  if (useTicketScan && sourceImageIndex) {
+    const existing = await db.query.pastAttendances.findFirst({
+      where: and(
+        eq(pastAttendances.ownerUserId, ownerId),
+        eq(pastAttendances.sourceType, "ticket_scan"),
+        eq(pastAttendances.sourceImageIndex, sourceImageIndex)
+      ),
+      columns: { id: true, title: true },
+    });
+    if (existing) {
+      return Response.json(
+        {
+          error: `同じ券面はすでに登録済みです（${existing.title}）。`,
+        },
+        { status: 409 }
+      );
+    }
+  }
+
   const [inserted] = await db
     .insert(pastAttendances)
     .values({
@@ -217,8 +240,8 @@ export async function POST(request: Request) {
       genre,
       oshiId: nullIfBlank(body.oshiId),
       topic: nullIfBlank(body.topic),
-      sourceType: "manual",
-      sourceImageIndex: null,
+      sourceType,
+      sourceImageIndex: useTicketScan ? sourceImageIndex : null,
       sourceFile: null,
       sourceEntryId: null,
       notes: nullIfBlank(body.notes),

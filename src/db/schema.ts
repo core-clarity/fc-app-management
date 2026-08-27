@@ -62,6 +62,7 @@ export const pastSourceTypeEnum = pgEnum("past_source_type", [
   "json_import",
   "entry_copy",
   "manual",
+  "ticket_scan",
 ]);
 
 // -----------------------------------------------
@@ -172,6 +173,8 @@ export const entries = pgTable(
     paidAt: timestamp("paid_at"),
 
     seatInfo: text("seat_info"),
+    /** 券面から読んだ／手入力したチケット金額（円）。不明は null */
+    price: integer("price"),
     ticketImageUrl: text("ticket_image_url"),
   },
   (table) => ({

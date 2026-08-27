@@ -169,6 +169,7 @@ export async function POST(request: Request, context: RouteContext) {
       entryId: entries.id,
       lotteryResult: entries.lotteryResult,
       seatInfo: entries.seatInfo,
+      entryPrice: entries.price,
       productionTitle: productions.title,
       productionArtist: productions.artist,
       venue: performances.venue,
@@ -192,6 +193,9 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
+  const resolvedPrice =
+    price !== undefined ? price : row.entryPrice ?? null;
+
   try {
     const [inserted] = await db
       .insert(pastAttendances)
@@ -208,7 +212,7 @@ export async function POST(request: Request, context: RouteContext) {
             : String(row.startTime)
         ),
         seatInfo: row.seatInfo,
-        price: price === undefined ? null : price,
+        price: resolvedPrice,
         genre,
         oshiId,
         topic,

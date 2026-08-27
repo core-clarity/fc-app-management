@@ -61,6 +61,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const body = raw as Record<string, unknown>;
   const hasSeatInfo = Object.prototype.hasOwnProperty.call(body, "seatInfo");
+  const hasPrice = Object.prototype.hasOwnProperty.call(body, "price");
   const hasLotteryResult = Object.prototype.hasOwnProperty.call(
     body,
     "lotteryResult"
@@ -70,7 +71,12 @@ export async function PATCH(request: Request, context: RouteContext) {
     "paymentCompleted"
   );
 
-  if (!hasSeatInfo && !hasLotteryResult && !hasPaymentCompleted) {
+  if (
+    !hasSeatInfo &&
+    !hasPrice &&
+    !hasLotteryResult &&
+    !hasPaymentCompleted
+  ) {
     return Response.json(
       { error: "更新するフィールドがありません。" },
       { status: 400 }
@@ -79,6 +85,23 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   if (hasSeatInfo && body.seatInfo !== null && typeof body.seatInfo !== "string") {
     return Response.json({ error: "seatInfo が不正です。" }, { status: 400 });
+  }
+
+  let parsedPrice: number | null | undefined = undefined;
+  if (hasPrice) {
+    if (body.price === null || body.price === "") {
+      parsedPrice = null;
+    } else if (typeof body.price === "number" && Number.isFinite(body.price)) {
+      parsedPrice = Math.round(body.price);
+    } else if (typeof body.price === "string" && body.price.trim()) {
+      const n = Number(body.price.replace(/,/g, ""));
+      if (!Number.isFinite(n)) {
+        return Response.json({ error: "price が不正です。" }, { status: 400 });
+      }
+      parsedPrice = Math.round(n);
+    } else {
+      return Response.json({ error: "price が不正です。" }, { status: 400 });
+    }
   }
 
   if (hasLotteryResult) {
@@ -105,6 +128,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       paymentStatus: entries.paymentStatus,
       paidAt: entries.paidAt,
       seatInfo: entries.seatInfo,
+      price: entries.price,
       performanceId: entries.performanceId,
       ownerUserId: members.ownerUserId,
       productionId: performances.productionId,
@@ -131,6 +155,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   let nextPaymentStatus: PaymentStatus = row.paymentStatus;
   let nextPaidAt: Date | null = row.paidAt;
   let nextSeatInfo = row.seatInfo;
+  let nextPrice = row.price;
 
   if (hasSeatInfo) {
     const rawSeat =
@@ -140,6 +165,10 @@ export async function PATCH(request: Request, context: RouteContext) {
           ? body.seatInfo.trim()
           : "";
     nextSeatInfo = rawSeat.length > 0 ? rawSeat : null;
+  }
+
+  if (parsedPrice !== undefined) {
+    nextPrice = parsedPrice;
   }
 
   if (hasLotteryResult) {
@@ -190,6 +219,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       .update(entries)
       .set({
         seatInfo: nextSeatInfo,
+        price: nextPrice,
         lotteryResult: nextLotteryResult,
         paymentStatus: nextPaymentStatus,
         paidAt: nextPaidAt,

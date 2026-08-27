@@ -9,6 +9,7 @@ const companionMembers = alias(members, "companion_members");
 export type EntryDetailDto = {
   id: string;
   seatInfo: string | null;
+  price: number | null;
   lotteryResult: LotteryResult;
   resultNotifiedAt: string | null;
   paymentStatus: PaymentStatus;
@@ -82,6 +83,7 @@ export async function loadEntryDetail(
     .select({
       id: entries.id,
       seatInfo: entries.seatInfo,
+      price: entries.price,
       lotteryResult: entries.lotteryResult,
       resultNotifiedAt: entries.resultNotifiedAt,
       paymentStatus: entries.paymentStatus,
@@ -131,6 +133,7 @@ export async function loadEntryDetail(
   return {
     id: row.id,
     seatInfo: row.seatInfo,
+    price: row.price,
     lotteryResult: row.lotteryResult,
     resultNotifiedAt: asDateOnlyString(row.resultNotifiedAt),
     paymentStatus: row.paymentStatus,

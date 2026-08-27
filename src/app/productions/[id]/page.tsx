@@ -5,17 +5,12 @@ import { alias } from "drizzle-orm/pg-core";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { entries, members, performances, productions } from "@/db/schema";
-import {
-  EntrySummaryList,
-  type EntrySummaryData,
-} from "@/components/EntrySummary";
+import { type EntrySummaryData } from "@/components/EntrySummary";
 import {
   companionTimingLabel,
-  dateToneClassName,
-  formatDateWithDow,
-  formatTimeDisplay,
   idVerificationLabel,
 } from "@/lib/labels";
+import { ProductionScheduleList } from "./production-schedule-list";
 
 export const dynamic = "force-dynamic";
 
@@ -205,56 +200,7 @@ export default async function ProductionDetailPage({ params }: PageProps) {
           </div>
         </section>
 
-        <section className="mt-6 space-y-6">
-          <h2 className="text-lg font-semibold text-ink">公演日程</h2>
-
-          {venueGroups.length === 0 ? (
-            <p className="rounded-2xl border border-slate-200/80 bg-white p-6 text-slate-600">
-              公演日程がありません。
-            </p>
-          ) : (
-            venueGroups.map(([venue, perfs]) => (
-              <div
-                key={venue}
-                className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6"
-              >
-                <h3 className="text-base font-semibold text-ink">{venue}</h3>
-                <ul className="mt-4 divide-y divide-slate-100">
-                  {perfs.map((perf) => (
-                    <li key={perf.id} className="py-4 first:pt-0 last:pb-0">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-base font-medium text-ink">
-                            <span className={dateToneClassName(perf.performanceDate)}>
-                              {formatDateWithDow(perf.performanceDate)}
-                            </span>
-                            <span className="ml-2 text-slate-600">
-                              {formatTimeDisplay(perf.startTime)}
-                            </span>
-                          </p>
-                          <div className="mt-2">
-                            <EntrySummaryList
-                              entries={perf.entries}
-                              linkToDetail
-                            />
-                          </div>
-                        </div>
-                        <Link
-                          href={`/entries/new?performanceId=${perf.id}`}
-                          className="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                        >
-                          {perf.entries.length > 0
-                            ? "エントリを見る・追加"
-                            : "エントリ追加"}
-                        </Link>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))
-          )}
-        </section>
+        <ProductionScheduleList venueGroups={venueGroups} />
       </div>
     </main>
   );

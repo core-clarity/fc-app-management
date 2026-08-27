@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import type { ReactNode, RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 
 type PastGenre = "concert" | "stage" | "other";
@@ -107,6 +107,10 @@ export function PastListClient() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [parseNote, setParseNote] = useState<string | null>(null);
+  const [scanImageHash, setScanImageHash] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [renameField, setRenameField] = useState<"artist" | "venue">("artist");
   const [renameFrom, setRenameFrom] = useState("");
@@ -184,10 +188,15 @@ export function PastListClient() {
     setBusy(true);
     setMessage(null);
     try {
+      const body: Record<string, unknown> = formToBody(form);
+      if (scanImageHash) {
+        body.sourceType = "ticket_scan";
+        body.sourceImageIndex = scanImageHash;
+      }
       const res = await fetch("/api/past-attendances", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formToBody(form)),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as {
@@ -197,6 +206,8 @@ export function PastListClient() {
       }
       setCreating(false);
       setForm(emptyForm);
+      setScanImageHash(null);
+      setParseNote(null);
       setMessage("追加しました");
       load();
     } catch (e) {
@@ -204,6 +215,104 @@ export function PastListClient() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function onParseTicket(file: File) {
+    if (!data?.canEdit) return;
+    setParsing(true);
+    setMessage(null);
+    setParseNote(null);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/past-attendances/parse-ticket", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await res.json()) as Record<string, unknown>;
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : "券面の読み取りに失敗しました。"
+        );
+      }
+
+      const filled: string[] = [];
+      setForm((prev) => {
+        const next = { ...prev };
+        if (typeof data.artist === "string" && data.artist.trim()) {
+          next.artist = data.artist.trim();
+          filled.push("アーティスト");
+        }
+        if (typeof data.title === "string" && data.title.trim()) {
+          next.title = data.title.trim();
+          filled.push("タイトル");
+        }
+        if (typeof data.venue === "string" && data.venue.trim()) {
+          next.venue = data.venue.trim();
+          filled.push("会場");
+        }
+        if (typeof data.city === "string" && data.city.trim()) {
+          next.city = data.city.trim();
+          filled.push("都市");
+        }
+        if (
+          typeof data.performanceDate === "string" &&
+          data.performanceDate.trim()
+        ) {
+          next.performanceDate = data.performanceDate.trim();
+          filled.push("日付");
+        }
+        if (typeof data.startTime === "string" && data.startTime.trim()) {
+          next.startTime = data.startTime.trim();
+          filled.push("開演");
+        }
+        if (typeof data.seatInfo === "string" && data.seatInfo.trim()) {
+          next.seatInfo = data.seatInfo.trim();
+          filled.push("座席");
+        }
+        if (typeof data.price === "number" && Number.isFinite(data.price)) {
+          next.price = String(Math.round(data.price));
+          filled.push("金額");
+        }
+        if (
+          data.genre === "concert" ||
+          data.genre === "stage" ||
+          data.genre === "other"
+        ) {
+          next.genre = data.genre;
+          filled.push("ジャンル");
+        }
+        return next;
+      });
+
+      if (typeof data.imageHash === "string" && data.imageHash.trim()) {
+        setScanImageHash(data.imageHash.trim());
+      }
+
+      if (filled.length > 0) {
+        setParseNote(
+          `券面から${filled.join("・")}を読み取りました。内容を確認し、必要なら手で直してから保存してください。`
+        );
+      } else {
+        setParseNote(
+          "券面から項目を読み取れませんでした。手入力してください。"
+        );
+      }
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "券面の読み取りに失敗しました");
+    } finally {
+      setParsing(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function closeDialog() {
+    setEditRow(null);
+    setCreating(false);
+    setScanImageHash(null);
+    setParseNote(null);
   }
 
   async function removeRow(row: PastRow) {
@@ -322,6 +431,8 @@ export function PastListClient() {
               setCreating(true);
               setForm(emptyForm);
               setEditRow(null);
+              setScanImageHash(null);
+              setParseNote(null);
             }}
             className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-sky-400"
           >
@@ -491,6 +602,8 @@ export function PastListClient() {
                         setEditRow(row);
                         setForm(rowToForm(row));
                         setCreating(false);
+                        setScanImageHash(null);
+                        setParseNote(null);
                       }}
                       className="text-sky-300 hover:underline"
                     >
@@ -530,10 +643,12 @@ export function PastListClient() {
           canEdit={!!data.canEdit && (creating || !!editRow)}
           readOnly={!data.canEdit}
           busy={busy}
-          onClose={() => {
-            setEditRow(null);
-            setCreating(false);
-          }}
+          parsing={parsing}
+          parseNote={parseNote}
+          showTicketScan={!!data.canEdit && (creating || !!editRow)}
+          fileInputRef={fileInputRef}
+          onParseTicket={onParseTicket}
+          onClose={closeDialog}
           onSave={creating ? saveCreate : saveEdit}
           extra={
             editRow ? (
@@ -566,6 +681,11 @@ function EditDialog({
   canEdit,
   readOnly,
   busy,
+  parsing,
+  parseNote,
+  showTicketScan,
+  fileInputRef,
+  onParseTicket,
   onClose,
   onSave,
   extra,
@@ -577,11 +697,16 @@ function EditDialog({
   canEdit: boolean;
   readOnly: boolean;
   busy: boolean;
+  parsing?: boolean;
+  parseNote?: string | null;
+  showTicketScan?: boolean;
+  fileInputRef?: RefObject<HTMLInputElement>;
+  onParseTicket?: (file: File) => void;
   onClose: () => void;
   onSave: () => void;
   extra?: ReactNode;
 }) {
-  const disabled = readOnly || busy;
+  const disabled = readOnly || busy || parsing;
 
   function field(
     key: keyof FormState,
@@ -630,6 +755,41 @@ function EditDialog({
           </button>
         </div>
         {extra ? <div className="mt-2">{extra}</div> : null}
+        {showTicketScan && fileInputRef && onParseTicket ? (
+          <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+            <p className="text-sm text-slate-300">
+              半券・電子チケットの画像から各項目を自動入力できます（FC・プレイガイド問わず）。画像は保存しません。
+            </p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                capture="environment"
+                className="sr-only"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onParseTicket(file);
+                }}
+              />
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-lg border border-sky-600/60 bg-sky-950/40 px-4 py-2 text-sm font-medium text-sky-200 hover:bg-sky-900/40 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {parsing ? "読み取り中…" : "券面から読み取り"}
+              </button>
+              {parseNote ? (
+                <p className="text-sm text-slate-400">{parseNote}</p>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  読み取り後もフィールドは自由に編集できます。
+                </p>
+              )}
+            </div>
+          </div>
+        ) : null}
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {field("performanceDate", "日付", { type: "date" })}
           {field("startTime", "開演", { type: "time" })}
@@ -684,7 +844,7 @@ function EditDialog({
           {canEdit && !readOnly ? (
             <button
               type="button"
-              disabled={busy || !form.title.trim()}
+              disabled={busy || parsing || !form.title.trim()}
               onClick={onSave}
               className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-sky-400 disabled:opacity-40"
             >

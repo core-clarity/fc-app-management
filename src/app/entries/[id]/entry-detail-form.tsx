@@ -52,6 +52,12 @@ export function EntryDetailForm({
   const [entry, setEntry] = useState(initial);
   const [seatInfo, setSeatInfo] = useState(initial.seatInfo ?? "");
   const [baselineSeat, setBaselineSeat] = useState(initial.seatInfo ?? "");
+  const [price, setPrice] = useState(
+    initial.price == null ? "" : String(initial.price)
+  );
+  const [baselinePrice, setBaselinePrice] = useState(
+    initial.price == null ? "" : String(initial.price)
+  );
   const [openRelease, setOpenRelease] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(
     initial.paymentStatus === "completed"
@@ -96,6 +102,7 @@ export function EntryDetailForm({
   };
 
   const seatDirty = seatInfo.trim() !== baselineSeat.trim();
+  const priceDirty = price.trim() !== baselinePrice.trim();
   const paymentDirty =
     entry.canEdit &&
     entry.lotteryResult === "won" &&
@@ -104,8 +111,8 @@ export function EntryDetailForm({
 
   const canSave = useMemo(() => {
     if (!entry.canEdit || saving) return false;
-    return seatDirty || paymentDirty || releaseDirty;
-  }, [entry.canEdit, saving, seatDirty, paymentDirty, releaseDirty]);
+    return seatDirty || priceDirty || paymentDirty || releaseDirty;
+  }, [entry.canEdit, saving, seatDirty, priceDirty, paymentDirty, releaseDirty]);
 
   async function onParseSeat(file: File) {
     if (!entry.canEdit) return;
@@ -132,12 +139,22 @@ export function EntryDetailForm({
       }
       if (typeof data.seatInfo === "string" && data.seatInfo.trim()) {
         setSeatInfo(data.seatInfo.trim());
+      }
+      const notes: string[] = [];
+      if (typeof data.seatInfo === "string" && data.seatInfo.trim()) {
+        notes.push("座席");
+      }
+      if (typeof data.price === "number" && Number.isFinite(data.price)) {
+        setPrice(String(Math.round(data.price)));
+        notes.push("金額");
+      }
+      if (notes.length > 0) {
         setParseNote(
-          "画像から座席を読み取りました。内容を確認し、必要なら手で直してから保存してください。"
+          `画像から${notes.join("・")}を読み取りました。内容を確認し、必要なら手で直してから保存してください。`
         );
       } else {
         setParseNote(
-          "座席情報を読み取れませんでした。手入力してください。"
+          "座席・金額を読み取れませんでした。手入力してください。"
         );
       }
     } catch {
@@ -158,6 +175,21 @@ export function EntryDetailForm({
       const body: Record<string, unknown> = {};
       if (seatDirty) {
         body.seatInfo = seatInfo.trim() || null;
+      }
+      if (priceDirty) {
+        const trimmed = price.trim();
+        if (trimmed === "") {
+          body.price = null;
+        } else {
+          const n = Number(trimmed.replace(/,/g, ""));
+          if (!Number.isFinite(n)) {
+            setError("金額が不正です。");
+            scrollToFeedback();
+            setSaving(false);
+            return;
+          }
+          body.price = Math.round(n);
+        }
       }
       if (releaseDirty) {
         body.lotteryResult = "won";
@@ -186,6 +218,9 @@ export function EntryDetailForm({
       setEntry(next);
       setSeatInfo(next.seatInfo ?? "");
       setBaselineSeat(next.seatInfo ?? "");
+      const nextPrice = next.price == null ? "" : String(next.price);
+      setPrice(nextPrice);
+      setBaselinePrice(nextPrice);
       setPaymentCompleted(next.paymentStatus === "completed");
       setOpenRelease(false);
       setReleasePaid(false);
@@ -214,7 +249,7 @@ export function EntryDetailForm({
     setCopyError(null);
     setCopyGenre("concert");
     setCopyOshiId("");
-    setCopyPrice("");
+    setCopyPrice(entry.price == null ? "" : String(entry.price));
     setCopyTopic("");
     setCopyDialogOpen(true);
   }
@@ -327,24 +362,41 @@ export function EntryDetailForm({
       </section>
 
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
-        <h2 className="text-lg font-semibold text-ink">座席情報</h2>
+        <h2 className="text-lg font-semibold text-ink">座席・金額</h2>
         <p className="mt-2 text-sm text-slate-600">
-          手入力するか、チケット画像から読み取って自動入力できます。画像自体は保存しません。
+          手入力するか、チケット画像から読み取って自動入力できます。金額は券面に読み取れる場合のみ入ります。画像自体は保存しません。
         </p>
 
-        <div className="mt-5">
-          <label htmlFor="seatInfo" className={labelClassName()}>
-            座席
-          </label>
-          <input
-            id="seatInfo"
-            type="text"
-            value={seatInfo}
-            onChange={(e) => setSeatInfo(e.target.value)}
-            disabled={!entry.canEdit || saving || parsing}
-            placeholder="例: 1階 バルコニー 12列 5番"
-            className={inputClassName()}
-          />
+        <div className="mt-5 space-y-4">
+          <div>
+            <label htmlFor="seatInfo" className={labelClassName()}>
+              座席
+            </label>
+            <input
+              id="seatInfo"
+              type="text"
+              value={seatInfo}
+              onChange={(e) => setSeatInfo(e.target.value)}
+              disabled={!entry.canEdit || saving || parsing}
+              placeholder="例: 1階 バルコニー 12列 5番"
+              className={inputClassName()}
+            />
+          </div>
+          <div>
+            <label htmlFor="ticketPrice" className={labelClassName()}>
+              金額（円・任意）
+            </label>
+            <input
+              id="ticketPrice"
+              type="text"
+              inputMode="numeric"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              disabled={!entry.canEdit || saving || parsing}
+              placeholder="例: 12000"
+              className={inputClassName()}
+            />
+          </div>
         </div>
 
         {entry.canEdit ? (
@@ -433,7 +485,7 @@ export function EntryDetailForm({
         <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
           <h2 className="text-lg font-semibold text-ink">過去データへコピー</h2>
           <p className="mt-2 text-sm text-slate-600">
-            当選エントリを生涯ログ（過去データ）へ追加します。座席は任意です。未保存の座席変更は含まれないため、必要なら先に保存してください。
+            当選エントリを生涯ログ（過去データ）へ追加します。座席・金額はエントリに保存済みの値を使います（コピー時に金額は変更可）。未保存の変更は含まれないため、必要なら先に保存してください。
           </p>
           {pastCopy.copiedPastAttendanceId ? (
             <p className="mt-4 text-sm text-emerald-800">
@@ -449,7 +501,7 @@ export function EntryDetailForm({
             <button
               type="button"
               onClick={openCopyDialog}
-              disabled={saving || copying || seatDirty}
+              disabled={saving || copying || seatDirty || priceDirty}
               className="mt-4 inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-brand-soft disabled:cursor-not-allowed disabled:opacity-60"
             >
               過去データへコピー…
@@ -459,9 +511,9 @@ export function EntryDetailForm({
               当選になるとコピーできます。
             </p>
           )}
-          {seatDirty ? (
+          {seatDirty || priceDirty ? (
             <p className="mt-2 text-sm text-amber-800">
-              座席に未保存の変更があります。コピー前に保存してください。
+              座席・金額に未保存の変更があります。コピー前に保存してください。
             </p>
           ) : null}
         </section>
