@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type ChangeEvent } from "react";
+import { PageBackNav } from "@/components/PageBackNav";
 import type { ParsedSchedule, ParsedVenue } from "@/db/import";
 import { dayLabelJa, dateToneClassName } from "@/lib/labels";
 
@@ -258,21 +259,14 @@ export default function NewProductionPage() {
     <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
       <div className="mx-auto max-w-3xl">
         <header className="border-b border-slate-200 pb-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-                公演登録
-              </h1>
-              <p className="mt-2 text-base text-slate-600">
-                申込画面のスクショからスケジュールを読み取り、手修正して保存します。
-              </p>
-            </div>
-            <Link
-              href="/"
-              className="shrink-0 text-sm font-medium text-slate-600 underline-offset-2 hover:text-brand-dark hover:underline"
-            >
-              ダッシュボードへ
-            </Link>
+          <PageBackNav links={[{ href: "/", label: "ホームへ" }]} />
+          <div className="mt-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              公演登録
+            </h1>
+            <p className="mt-2 text-base text-slate-600">
+              申込画面のスクショからスケジュールを読み取り、手修正して保存します。
+            </p>
           </div>
         </header>
 
@@ -651,7 +645,7 @@ export default function NewProductionPage() {
                 onClick={() => router.push("/")}
                 className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-white"
               >
-                ダッシュボードへ
+                ホームへ
               </button>
               <button
                 type="button"

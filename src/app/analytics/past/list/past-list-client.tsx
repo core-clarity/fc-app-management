@@ -664,8 +664,11 @@ export function PastListClient() {
         />
       ) : null}
 
-      <p className="text-sm">
-        <Link href="/analytics/past" className="text-sky-300 hover:underline">
+      <p className="text-sm leading-tight">
+        <Link
+          href="/analytics/past"
+          className="text-sm font-medium text-slate-400 underline-offset-2 hover:text-sky-300 hover:underline"
+        >
           ← 過去データの分析へ
         </Link>
       </p>

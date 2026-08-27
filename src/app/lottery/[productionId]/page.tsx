@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
 import { auth } from "@/auth";
+import { PageBackNav } from "@/components/PageBackNav";
 import { LotteryForm } from "./lottery-form";
 import { loadLotteryContext } from "@/lib/lottery";
 
@@ -38,12 +39,15 @@ export default async function LotteryPage({ params }: PageProps) {
       <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
         <div className="mx-auto max-w-3xl">
           <header className="border-b border-slate-200 pb-6">
-            <Link
-              href={`/productions/${params.productionId}`}
-              className="inline-flex items-center text-base font-semibold text-brand-dark underline-offset-2 hover:underline"
-            >
-              ← 公演日程へ
-            </Link>
+            <PageBackNav
+              links={[
+                { href: "/", label: "ホームへ" },
+                {
+                  href: `/productions/${params.productionId}`,
+                  label: "公演日程へ",
+                },
+              ]}
+            />
             <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
               当落一括入力
             </h1>
@@ -84,27 +88,22 @@ export default async function LotteryPage({ params }: PageProps) {
     <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
       <div className="mx-auto max-w-3xl">
         <header className="border-b border-slate-200 pb-6">
-          <Link
-            href={`/productions/${data.production.id}`}
-            className="inline-flex items-center text-base font-semibold text-brand-dark underline-offset-2 hover:underline"
-          >
-            ← 公演日程へ
-          </Link>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-                当落一括入力
-              </h1>
-              <p className="mt-2 text-base text-slate-600">
-                担当名義のエントリについて、当選・落選と通知日を一括で記録します。
-              </p>
-            </div>
-            <Link
-              href="/"
-              className="shrink-0 text-sm font-medium text-slate-600 underline-offset-2 hover:text-brand-dark hover:underline"
-            >
-              ダッシュボードへ
-            </Link>
+          <PageBackNav
+            links={[
+              { href: "/", label: "ホームへ" },
+              {
+                href: `/productions/${data.production.id}`,
+                label: "公演日程へ",
+              },
+            ]}
+          />
+          <div className="mt-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              当落一括入力
+            </h1>
+            <p className="mt-2 text-base text-slate-600">
+              担当名義のエントリについて、当選・落選と通知日を一括で記録します。
+            </p>
           </div>
         </header>
 

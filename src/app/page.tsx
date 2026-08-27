@@ -38,32 +38,34 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
       <div className="mx-auto max-w-3xl">
-        <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-medium tracking-wide text-brand">
-              FC申込管理
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-              ダッシュボード
+            <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              現場管理システム
             </h1>
-            <p className="mt-2 text-base text-slate-600">
-              ログイン中: {session?.user?.name ?? session?.user?.email}
+            <p className="mt-1 text-sm font-medium tracking-wide text-brand">
+              チケット申込・当落・公演記録
             </p>
           </div>
 
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
-            <button
-              type="submit"
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-brand/40 hover:bg-brand-soft hover:text-brand-dark"
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <p className="text-sm text-slate-600">
+              ログイン中: {session?.user?.name ?? session?.user?.email}
+            </p>
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/login" });
+              }}
             >
-              ログアウト
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-brand/40 hover:bg-brand-soft hover:text-brand-dark"
+              >
+                ログアウト
+              </button>
+            </form>
+          </div>
         </header>
 
         <section className="mt-8 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">

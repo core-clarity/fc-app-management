@@ -9,6 +9,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { PageBackNav } from "@/components/PageBackNav";
 import { MemberSymbol } from "@/components/MemberSymbol";
 import {
   EntrySummaryLine,
@@ -287,12 +288,7 @@ function NewEntryForm() {
           >
             {loadError ?? "データがありません。"}
           </p>
-          <Link
-            href="/"
-            className="inline-flex text-sm font-medium text-brand-dark underline-offset-2 hover:underline"
-          >
-            ダッシュボードへ
-          </Link>
+          <PageBackNav links={[{ href: "/", label: "ホームへ" }]} />
         </div>
       </>
     );
@@ -619,33 +615,24 @@ function NewEntryForm() {
 }
 
 function PageChrome({ productionId }: { productionId?: string }) {
+  const links = [{ href: "/", label: "ホームへ" }];
+  if (productionId) {
+    links.push({
+      href: `/productions/${productionId}`,
+      label: "公演日程へ",
+    });
+  }
+
   return (
     <header className="border-b border-slate-200 pb-6">
-      {productionId ? (
-        <Link
-          href={`/productions/${productionId}`}
-          className="inline-flex items-center text-base font-semibold text-brand-dark underline-offset-2 hover:underline"
-        >
-          ← 公演日程へ
-        </Link>
-      ) : null}
-      <div
-        className={`flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between ${productionId ? "mt-3" : ""}`}
-      >
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-            エントリ
-          </h1>
-          <p className="mt-2 text-base text-slate-600">
-            登録内容の確認・削除、および追加ができます。修正は削除してから追加し直してください。
-          </p>
-        </div>
-        <Link
-          href="/"
-          className="shrink-0 text-sm font-medium text-slate-600 underline-offset-2 hover:text-brand-dark hover:underline"
-        >
-          ダッシュボードへ
-        </Link>
+      <PageBackNav links={links} />
+      <div className="mt-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+          エントリ
+        </h1>
+        <p className="mt-2 text-base text-slate-600">
+          登録内容の確認・削除、および追加ができます。修正は削除してから追加し直してください。
+        </p>
       </div>
     </header>
   );

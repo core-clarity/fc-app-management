@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { PageBackNav } from "@/components/PageBackNav";
 import { PastListClient } from "./past-list-client";
 
 export const dynamic = "force-dynamic";
@@ -14,20 +14,13 @@ export default async function PastListPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/analytics/past"
-            className="text-base font-semibold text-sky-300 underline-offset-2 hover:underline"
-          >
-            ← 過去データの分析へ
-          </Link>
-          <Link
-            href="/"
-            className="text-sm text-slate-400 underline-offset-2 hover:text-sky-300 hover:underline"
-          >
-            ダッシュボード
-          </Link>
-        </div>
+        <PageBackNav
+          variant="dark"
+          links={[
+            { href: "/", label: "ホームへ" },
+            { href: "/analytics/past", label: "過去データの分析へ" },
+          ]}
+        />
 
         <header className="mt-6 border-b border-slate-800 pb-6">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-sky-400/80">

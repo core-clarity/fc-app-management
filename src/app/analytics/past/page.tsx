@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { auth, signOut } from "@/auth";
+import { PageBackNav } from "@/components/PageBackNav";
 import { db } from "@/db";
 import {
   artistThemes,
@@ -248,12 +249,7 @@ function BackHeader({ isViewer }: { isViewer: boolean }) {
 
   return (
     <div className="flex items-center justify-between gap-4">
-      <Link
-        href="/"
-        className="text-base font-semibold text-sky-300 underline-offset-2 hover:underline"
-      >
-        ← ダッシュボードへ
-      </Link>
+      <PageBackNav variant="dark" links={[{ href: "/", label: "ホームへ" }]} />
       <Link
         href="/analytics/past/list"
         className="text-sm font-semibold text-sky-300 underline-offset-2 hover:underline"

@@ -1,3 +1,4 @@
+import { PageBackNav } from "@/components/PageBackNav";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
@@ -146,22 +147,14 @@ export default async function ProductionDetailPage({ params }: PageProps) {
     <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
       <div className="mx-auto max-w-3xl">
         <header className="border-b border-slate-200 pb-6">
-          <p className="text-sm font-medium text-slate-500">公演日程</p>
-          <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-                {production.title}
-              </h1>
-              <p className="mt-2 text-base text-slate-600">
-                {production.artist}
-              </p>
-            </div>
-            <Link
-              href="/"
-              className="shrink-0 text-sm font-medium text-slate-600 underline-offset-2 hover:text-brand-dark hover:underline"
-            >
-              ダッシュボードへ
-            </Link>
+          <PageBackNav links={[{ href: "/", label: "ホームへ" }]} />
+          <div className="mt-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              {production.title}
+            </h1>
+            <p className="mt-2 text-base text-slate-600">
+              {production.artist}
+            </p>
           </div>
         </header>
 

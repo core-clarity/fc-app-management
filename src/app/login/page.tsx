@@ -36,13 +36,13 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm sm:p-10">
-        <p className="text-sm font-medium tracking-wide text-brand">
-          FC申込管理
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          ログイン
+        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+          現場管理システム
         </h1>
-        <p className="mt-2 text-base leading-relaxed text-slate-600">
+        <p className="mt-1 text-sm font-medium tracking-wide text-brand">
+          チケット申込・当落・公演記録
+        </p>
+        <p className="mt-4 text-base leading-relaxed text-slate-600">
           担当名義の申込・当落を管理します。
         </p>
 
