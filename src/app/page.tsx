@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { desc, eq, sql } from "drizzle-orm";
+import { Landmark, Send } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { db } from "@/db";
 import { entries, performances, productions } from "@/db/schema";
@@ -103,29 +104,58 @@ export default async function HomePage() {
                     <p className="text-base font-semibold text-ink group-hover:text-brand-dark">
                       {p.title}
                     </p>
-                    <p className="mt-1 text-sm text-slate-600">
+                  </Link>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+                    <p className="text-slate-600">
                       {p.artist} ・ 公演 {p.performanceCount} 件 ・ 同行者
                       {p.companionTiming === "at_entry"
                         ? "申込時"
                         : "公演前OK"}
                     </p>
-                  </Link>
-                  {p.entryCount === 0 ? (
-                    <p className="mt-2 text-sm text-slate-500">エントリなし</p>
-                  ) : (
-                    <div className="mt-2 space-y-1 text-sm text-slate-700">
-                      <p>
-                        当落: 未設定 {p.pendingCount} / 当選 {p.wonCount} /
-                        落選 {p.lostCount}
-                      </p>
-                      {p.wonCount > 0 ? (
-                        <p>
-                          入金: 未入金 {p.unpaidCount} / 入金済み {p.paidCount}
-                        </p>
-                      ) : null}
-                    </div>
-                  )}
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                    {p.entryCount === 0 ? (
+                      <span className="text-slate-500">エントリなし</span>
+                    ) : (
+                      <>
+                        <span
+                          className="inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-brand/20 bg-brand-soft px-1.5 py-0.5 text-slate-700"
+                          title="当落の集計"
+                        >
+                          <Send
+                            className="h-4 w-4 text-brand-dark"
+                            aria-hidden="true"
+                          />
+                          <span className="sr-only">当落:</span>
+                          <span>当落待ち {p.pendingCount}</span>
+                          <span className="text-slate-300" aria-hidden>
+                            /
+                          </span>
+                          <span>当選 {p.wonCount}</span>
+                          <span className="text-slate-300" aria-hidden>
+                            /
+                          </span>
+                          <span>落選 {p.lostCount}</span>
+                        </span>
+                        {p.wonCount > 0 ? (
+                          <span
+                            className="inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-slate-700"
+                            title="入金の集計"
+                          >
+                            <Landmark
+                              className="h-4 w-4 text-brand-dark"
+                              aria-hidden="true"
+                            />
+                            <span className="sr-only">入金:</span>
+                            <span>未入金 {p.unpaidCount}</span>
+                            <span className="text-slate-300" aria-hidden>
+                              /
+                            </span>
+                            <span>入金済み {p.paidCount}</span>
+                          </span>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                  <div className="mt-2 flex items-center gap-x-3 text-sm">
                     <Link
                       href={`/productions/${p.id}`}
                       className="font-medium text-brand-dark underline-offset-2 hover:underline"
