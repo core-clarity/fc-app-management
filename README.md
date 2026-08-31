@@ -103,3 +103,21 @@ AUTH_SECRET=...
 NEXTAUTH_URL=http://localhost:3000
 ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+## 開発サーバーの運用
+
+開発サーバーと本番ビルドはどちらも `.next` を使用するため、同時に実行しないでください。
+
+### 通常の起動
+
+1. 既存の `npm run dev` が動いていないことを確認する。
+2. プロジェクトの端末で `npm run dev` を1つだけ実行する。
+3. `Local: http://localhost:3000` と `Ready` が表示されたことを確認する。
+
+### ビルドする場合
+
+開発サーバーを `Ctrl+C` で停止してから、別のコマンドとして `npm run build` を実行します。ビルド中に `npm run dev` を起動してはいけません。
+
+### チャンクエラーからの復旧
+
+`Cannot find module './*.js'` などのエラーが出た場合は、開発サーバーを停止し、`.next` を削除してから `npm run dev` を1つだけ起動します。詳細なエージェント向けルールは、リポジトリ直下の `AGENTS.md` と `.cursor/rules/dev-server-safety.mdc` にあります。

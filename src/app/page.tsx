@@ -279,12 +279,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             エントリーの振り返りと、生涯観覧ログの集計です。
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
-            <span
-              className="inline-flex cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-base font-semibold text-slate-400"
-              title="STEP 7-4 で実装予定"
+            <Link
+              href="/analytics/entries"
+              className="inline-flex rounded-lg border border-brand/40 bg-white px-4 py-3 text-base font-semibold text-brand-dark transition hover:bg-brand-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              エントリーの分析（準備中）
-            </span>
+              エントリーの分析
+            </Link>
             <Link
               href="/analytics/past"
               className="inline-flex rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"

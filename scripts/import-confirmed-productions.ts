@@ -81,7 +81,7 @@ const PAST_MEMBERS = [
   },
   {
     label: "名義S",
-    name: "前田姉",
+    name: "前田姉（トニ）",
     ownerEmail: "opntssm022427@gmail.com",
     symbol: "crescent",
     themeColor: "#da70d6",

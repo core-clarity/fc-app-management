@@ -60,7 +60,7 @@ const SEED_USERS: SeedUser[] = [
 const SEED_MEMBERS: SeedMember[] = [
   {
     label: "名義A",
-    name: "萩野",
+    name: "萩野（トニ）",
     ownerEmail: "otsukait666@gmail.com",
     symbol: "cat",
     themeColor: "#FFFFFF",
@@ -69,7 +69,7 @@ const SEED_MEMBERS: SeedMember[] = [
   },
   {
     label: "名義C",
-    name: "須藤",
+    name: "須藤（トニ）",
     ownerEmail: "otsukait666@gmail.com",
     symbol: "cat",
     themeColor: "#22C55E",
@@ -78,7 +78,7 @@ const SEED_MEMBERS: SeedMember[] = [
   },
   {
     label: "名義B",
-    name: "前田",
+    name: "前田（トニ）",
     ownerEmail: "opntssm022427@gmail.com",
     symbol: "crescent",
     themeColor: "#223a70",
@@ -87,7 +87,7 @@ const SEED_MEMBERS: SeedMember[] = [
   },
   {
     label: "名義D",
-    name: "佐藤",
+    name: "佐藤（トニ）",
     ownerEmail: "opntssm022427@gmail.com",
     symbol: "crescent",
     themeColor: "#EAB308",
