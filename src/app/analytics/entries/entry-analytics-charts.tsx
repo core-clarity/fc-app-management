@@ -199,7 +199,7 @@ export function EntryAnalyticsCharts({ data }: Props) {
                   <Bar
                     dataKey="winRateValue"
                     name="勝率"
-                    fill="#4f9f83"
+                    fill="#5383c3"
                     radius={[0, 4, 4, 0]}
                     isAnimationActive
                     animationDuration={800}
