@@ -21,10 +21,10 @@ export default async function AppearanceSettingsPage() {
         <header className="border-b border-slate-200 pb-6">
           <PageBackNav links={[{ href: "/", label: "ホームへ" }]} />
           <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-            見た目マスタ
+            名義・見た目マスタ
           </h1>
           <p className="mt-2 text-base text-slate-600">
-            名義のアイコン・色・顔認証可否、推しカラー、券面アーティスト色を編集します。アーティストは明示したいものだけ登録すればよく、チャートのトップ枠は未指定でも自動色になります。
+            名義の追加・担当ユーザー・有効状態・アイコン・色・顔認証可否、推しカラー、券面アーティスト色を編集します。アーティストは明示したいものだけ登録すればよく、チャートのトップ枠は未指定でも自動色になります。
           </p>
         </header>
 

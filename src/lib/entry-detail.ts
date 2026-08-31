@@ -8,6 +8,7 @@ const companionMembers = alias(members, "companion_members");
 
 export type EntryDetailDto = {
   id: string;
+  applicationGroupId: string | null;
   seatInfo: string | null;
   price: number | null;
   lotteryResult: LotteryResult;
@@ -82,6 +83,7 @@ export async function loadEntryDetail(
   const rows = await db
     .select({
       id: entries.id,
+      applicationGroupId: entries.applicationGroupId,
       seatInfo: entries.seatInfo,
       price: entries.price,
       lotteryResult: entries.lotteryResult,
@@ -132,6 +134,7 @@ export async function loadEntryDetail(
 
   return {
     id: row.id,
+    applicationGroupId: row.applicationGroupId,
     seatInfo: row.seatInfo,
     price: row.price,
     lotteryResult: row.lotteryResult,

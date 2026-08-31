@@ -15,6 +15,7 @@ export type EntryMemberBrief = {
 
 export type EntrySummaryData = {
   id: string;
+  applicationGroupId?: string | null;
   companionType: "fc_member" | "general_email" | "none";
   companionEmail: string | null;
   member: EntryMemberBrief;
@@ -83,14 +84,14 @@ function ResultBadges({ entry }: { entry: EntrySummaryData }) {
   );
 }
 
-/** 申込／同行の1行表示（当落保存後は右側にバッジ） */
+/** 申込／同行と、当落・入金を分けて表示 */
 export function EntrySummaryLine({ entry }: { entry: EntrySummaryData }) {
   const result = entry.lotteryResult;
   const showBadges = result === "won" || result === "lost";
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-ink">
-      <p className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+    <div className="min-w-0 text-sm text-ink">
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="inline-flex flex-wrap items-center gap-1.5">
           <span className="text-slate-500">申込：</span>
           <MemberLabel member={entry.member} />
@@ -99,8 +100,17 @@ export function EntrySummaryLine({ entry }: { entry: EntrySummaryData }) {
           <span className="text-slate-500">同行：</span>
           {companionText(entry)}
         </span>
-      </p>
-      {showBadges ? <ResultBadges entry={entry} /> : null}
+        {entry.applicationGroupId ? (
+          <span className="rounded bg-sky-50 px-1.5 py-0.5 text-xs font-medium text-sky-800 ring-1 ring-inset ring-sky-200">
+            同一申込
+          </span>
+        ) : null}
+      </div>
+      {showBadges ? (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <ResultBadges entry={entry} />
+        </div>
+      ) : null}
     </div>
   );
 }

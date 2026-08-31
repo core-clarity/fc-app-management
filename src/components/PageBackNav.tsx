@@ -3,6 +3,7 @@ import Link from "next/link";
 export type BackNavLink = {
   href: string;
   label: string;
+  reloadDocument?: boolean;
 };
 
 type PageBackNavProps = {
@@ -22,13 +23,23 @@ export function PageBackNav({ links, variant = "light" }: PageBackNavProps) {
   return (
     <nav className="flex flex-col gap-0.5 leading-tight">
       {links.map((link) => (
-        <Link
-          key={`${link.href}-${link.label}`}
-          href={link.href}
-          className={VARIANT_CLASS[variant]}
-        >
-          ← {link.label}
-        </Link>
+        link.reloadDocument ? (
+          <a
+            key={`${link.href}-${link.label}`}
+            href={link.href}
+            className={VARIANT_CLASS[variant]}
+          >
+            ← {link.label}
+          </a>
+        ) : (
+          <Link
+            key={`${link.href}-${link.label}`}
+            href={link.href}
+            className={VARIANT_CLASS[variant]}
+          >
+            ← {link.label}
+          </Link>
+        )
       ))}
     </nav>
   );

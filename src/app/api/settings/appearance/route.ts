@@ -6,6 +6,7 @@ import {
   members,
   oshiArtists,
   pastAttendances,
+  users,
 } from "@/db/schema";
 import { MEMBER_SYMBOL_CATALOG } from "@/lib/member-symbols";
 import { isPastViewerEmail } from "@/lib/past-owner";
@@ -42,51 +43,57 @@ export async function GET() {
   const gate = await requireEditor();
   if ("error" in gate && gate.error) return gate.error;
 
-  const [memberRows, oshiRows, artistRows, distinctArtists] = await Promise.all(
-    [
-      db
-        .select({
-          id: members.id,
-          label: members.label,
-          name: members.name,
-          symbol: members.symbol,
-          themeColor: members.themeColor,
-          canPassIdVerification: members.canPassIdVerification,
-          isActive: members.isActive,
-        })
-        .from(members)
-        .orderBy(asc(members.label)),
-      db
-        .select({
-          id: oshiArtists.id,
-          label: oshiArtists.label,
-          themeColor: oshiArtists.themeColor,
-          sortOrder: oshiArtists.sortOrder,
-          isActive: oshiArtists.isActive,
-        })
-        .from(oshiArtists)
-        .orderBy(asc(oshiArtists.sortOrder), asc(oshiArtists.label)),
-      db
-        .select({
-          id: artistThemes.id,
-          label: artistThemes.label,
-          themeColor: artistThemes.themeColor,
-          sortOrder: artistThemes.sortOrder,
-          isActive: artistThemes.isActive,
-        })
-        .from(artistThemes)
-        .orderBy(asc(artistThemes.sortOrder), asc(artistThemes.label)),
-      db
-        .selectDistinct({ artist: pastAttendances.artist })
-        .from(pastAttendances)
-        .where(
-          and(
-            isNotNull(pastAttendances.artist),
-            ne(pastAttendances.artist, "")
-          )
-        ),
-    ]
-  );
+  const [memberRows, oshiRows, artistRows, distinctArtists, userRows] =
+    await Promise.all(
+      [
+        db
+          .select({
+            id: members.id,
+            label: members.label,
+            name: members.name,
+            ownerUserId: members.ownerUserId,
+            symbol: members.symbol,
+            themeColor: members.themeColor,
+            canPassIdVerification: members.canPassIdVerification,
+            isActive: members.isActive,
+          })
+          .from(members)
+          .orderBy(asc(members.label)),
+        db
+          .select({
+            id: oshiArtists.id,
+            label: oshiArtists.label,
+            themeColor: oshiArtists.themeColor,
+            sortOrder: oshiArtists.sortOrder,
+            isActive: oshiArtists.isActive,
+          })
+          .from(oshiArtists)
+          .orderBy(asc(oshiArtists.sortOrder), asc(oshiArtists.label)),
+        db
+          .select({
+            id: artistThemes.id,
+            label: artistThemes.label,
+            themeColor: artistThemes.themeColor,
+            sortOrder: artistThemes.sortOrder,
+            isActive: artistThemes.isActive,
+          })
+          .from(artistThemes)
+          .orderBy(asc(artistThemes.sortOrder), asc(artistThemes.label)),
+        db
+          .selectDistinct({ artist: pastAttendances.artist })
+          .from(pastAttendances)
+          .where(
+            and(isNotNull(pastAttendances.artist), ne(pastAttendances.artist, ""))
+          ),
+        db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+          })
+          .from(users),
+      ]
+    );
 
   const knownLabels = new Set(artistRows.map((a) => a.label));
   const unregisteredArtists = distinctArtists
@@ -97,6 +104,9 @@ export async function GET() {
   return Response.json({
     symbolCatalog: MEMBER_SYMBOL_CATALOG,
     members: sortMembersForAppearance(memberRows),
+    users: userRows
+      .filter((user) => !isPastViewerEmail(user.email))
+      .map(({ id, name, email }) => ({ id, name, email })),
     oshiList: oshiRows,
     artistThemes: artistRows,
     unregisteredArtists,

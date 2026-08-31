@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { desc, eq, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { Landmark, Send } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { db } from "@/db";
@@ -7,7 +7,26 @@ import { entries, performances, productions } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: {
+    status?: string;
+  };
+};
+
+function getTodayInJst(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "0000";
+  const month = parts.find((part) => part.type === "month")?.value ?? "00";
+  const day = parts.find((part) => part.type === "day")?.value ?? "00";
+  return `${year}-${month}-${day}`;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
   const session = await auth();
 
   const productionList = await db
@@ -17,6 +36,7 @@ export default async function HomePage() {
       artist: productions.artist,
       companionTiming: productions.companionTiming,
       performanceCount: sql<number>`count(distinct ${performances.id})::int`,
+      lastPerformanceDate: sql<string | null>`max(${performances.performanceDate})`,
       entryCount: sql<number>`count(${entries.id})::int`,
       pendingCount: sql<number>`count(${entries.id}) filter (where ${entries.lotteryResult} = 'pending')::int`,
       wonCount: sql<number>`count(${entries.id}) filter (where ${entries.lotteryResult} = 'won')::int`,
@@ -34,7 +54,26 @@ export default async function HomePage() {
       productions.companionTiming,
       productions.createdAt
     )
-    .orderBy(desc(productions.createdAt));
+    .orderBy(
+      sql`max(${performances.performanceDate}) desc nulls last`,
+      asc(productions.title),
+      asc(productions.id)
+    );
+
+  const todayJst = getTodayInJst();
+  const productionListWithStatus = productionList.map((production) => ({
+    ...production,
+    isActive:
+      production.lastPerformanceDate !== null &&
+      production.lastPerformanceDate >= todayJst,
+    isEnded:
+      production.lastPerformanceDate !== null &&
+      production.lastPerformanceDate < todayJst,
+  }));
+  const activeOnly = searchParams?.status === "active";
+  const visibleProductionList = activeOnly
+    ? productionListWithStatus.filter((production) => production.isActive)
+    : productionListWithStatus;
 
   return (
     <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
@@ -85,25 +124,74 @@ export default async function HomePage() {
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ink">登録済み公演</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            当落・入金の件数は全名義の合計です。
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-ink">登録済み公演</h2>
+              <p className="mt-2 text-sm text-slate-500">
+                当落・入金の件数は全名義の合計です。
+              </p>
+            </div>
+            <div
+              className="inline-flex self-start rounded-lg border border-slate-200 bg-slate-50 p-0.5"
+              role="group"
+              aria-label="公演の表示範囲"
+            >
+              <Link
+                href="/"
+                prefetch={false}
+                className={
+                  !activeOnly
+                    ? "rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-slate-200/80"
+                    : "rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:text-ink"
+                }
+                aria-current={!activeOnly ? "page" : undefined}
+              >
+                すべて
+              </Link>
+              <Link
+                href="/?status=active"
+                prefetch={false}
+                className={
+                  activeOnly
+                    ? "rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-slate-200/80"
+                    : "rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:text-ink"
+                }
+                aria-current={activeOnly ? "page" : undefined}
+              >
+                終了していない公演
+              </Link>
+            </div>
+          </div>
           {productionList.length === 0 ? (
             <p className="mt-3 text-base text-slate-600">
               まだ公演がありません。「公演を登録する」から追加してください。
             </p>
+          ) : visibleProductionList.length === 0 ? (
+            <p className="mt-4 text-base text-slate-600">
+              終了していない公演はありません。
+            </p>
           ) : (
             <ul className="mt-4 divide-y divide-slate-100">
-              {productionList.map((p) => (
+              {visibleProductionList.map((p) => (
                 <li key={p.id} className="py-4 first:pt-0 last:pb-0">
                   <Link
                     href={`/productions/${p.id}`}
                     className="block group"
                   >
-                    <p className="text-base font-semibold text-ink group-hover:text-brand-dark">
-                      {p.title}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {p.isEnded ? (
+                        <span className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                          終了
+                        </span>
+                      ) : p.lastPerformanceDate === null ? (
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-500">
+                          日程未設定
+                        </span>
+                      ) : null}
+                      <p className="text-base font-semibold text-ink group-hover:text-brand-dark">
+                        {p.title}
+                      </p>
+                    </div>
                   </Link>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
                     <p className="text-slate-600">
@@ -112,6 +200,13 @@ export default async function HomePage() {
                         ? "申込時"
                         : "公演前OK"}
                     </p>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {p.lastPerformanceDate
+                      ? `最終公演日 ${p.lastPerformanceDate}`
+                      : "公演日未設定"}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                     {p.entryCount === 0 ? (
                       <span className="text-slate-500">エントリなし</span>
                     ) : (

@@ -11,6 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
+    "db:import-productions": "tsx scripts/import-confirmed-productions.ts",
+    "db:maintain-productions": "tsx scripts/maintain-confirmed-productions.ts",
     "db:import-past": "tsx scripts/import-past-json.ts",
     "db:check-past": "tsx scripts/check-past-data.ts"
   },

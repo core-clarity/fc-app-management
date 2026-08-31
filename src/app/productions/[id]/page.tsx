@@ -44,15 +44,16 @@ export default async function ProductionDetailPage({ params }: PageProps) {
     .from(performances)
     .where(eq(performances.productionId, production.id))
     .orderBy(
-      asc(performances.venue),
       asc(performances.performanceDate),
-      asc(performances.startTime)
+      asc(performances.startTime),
+      asc(performances.venue)
     );
 
   const entryRows = await db
     .select({
       id: entries.id,
       performanceId: entries.performanceId,
+      applicationGroupId: entries.applicationGroupId,
       companionType: entries.companionType,
       companionEmail: entries.companionEmail,
       lotteryResult: entries.lotteryResult,
@@ -82,6 +83,7 @@ export default async function ProductionDetailPage({ params }: PageProps) {
   for (const row of entryRows) {
     const summary: EntrySummaryData = {
       id: row.id,
+      applicationGroupId: row.applicationGroupId,
       companionType: row.companionType,
       companionEmail: row.companionEmail,
       lotteryResult: row.lotteryResult,
@@ -140,7 +142,15 @@ export default async function ProductionDetailPage({ params }: PageProps) {
     byVenue.set(row.venue, list);
   }
 
-  const venueGroups = Array.from(byVenue.entries());
+  const venueGroups = Array.from(byVenue.entries()).sort(
+    ([venueA, performancesA], [venueB, performancesB]) => {
+      const firstA = performancesA[0];
+      const firstB = performancesB[0];
+      const keyA = `${firstA.performanceDate}T${firstA.startTime}|${venueA}`;
+      const keyB = `${firstB.performanceDate}T${firstB.startTime}|${venueB}`;
+      return keyA.localeCompare(keyB);
+    }
+  );
   const totalEntries = entryRows.length;
 
   return (
@@ -183,13 +193,25 @@ export default async function ProductionDetailPage({ params }: PageProps) {
           <p className="mt-4 text-sm text-slate-500">
             公演 {performanceRows.length} 件 / エントリ合計 {totalEntries} 件
           </p>
-          <div className="mt-5 flex justify-end">
-            <Link
-              href={`/lottery/${production.id}`}
-              className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-            >
-              担当名義の当落入力
-            </Link>
+          <div className="mt-5 border-t border-slate-100 pt-5">
+            <h3 className="text-base font-semibold text-ink">一括登録</h3>
+            <p className="mt-1 text-sm text-slate-600">
+              複数のエントリや当落をまとめて登録します。
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={`/lottery/${production.id}`}
+                className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                当落を一括入力
+              </Link>
+              <Link
+                href={`/entries/group/new?productionId=${production.id}`}
+                className="inline-flex rounded-lg border border-brand/40 bg-white px-4 py-2.5 text-sm font-semibold text-brand-dark transition hover:bg-brand-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                第2希望以降ありの申込を登録
+              </Link>
+            </div>
           </div>
         </section>
 

@@ -41,7 +41,7 @@ export default async function LotteryPage({ params }: PageProps) {
           <header className="border-b border-slate-200 pb-6">
             <PageBackNav
               links={[
-                { href: "/", label: "ホームへ" },
+                { href: "/", label: "ホームへ", reloadDocument: true },
                 {
                   href: `/productions/${params.productionId}`,
                   label: "公演日程へ",
@@ -90,7 +90,7 @@ export default async function LotteryPage({ params }: PageProps) {
         <header className="border-b border-slate-200 pb-6">
           <PageBackNav
             links={[
-              { href: "/", label: "ホームへ" },
+              { href: "/", label: "ホームへ", reloadDocument: true },
               {
                 href: `/productions/${data.production.id}`,
                 label: "公演日程へ",

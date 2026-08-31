@@ -87,6 +87,7 @@ export function EntryDetailForm({
 
   const summary: EntrySummaryData = {
     id: entry.id,
+    applicationGroupId: entry.applicationGroupId,
     companionType: entry.companionType,
     companionEmail: entry.companionEmail,
     lotteryResult: entry.lotteryResult,

@@ -40,6 +40,7 @@ export type PaymentStatus = "not_required" | "pending" | "completed";
 
 export type LotteryEntryDto = {
   id: string;
+  applicationGroupId: string | null;
   lotteryResult: LotteryResult;
   resultNotifiedAt: string | null;
   paymentStatus: PaymentStatus;
@@ -112,6 +113,7 @@ export async function loadLotteryContext(
   const rows = await db
     .select({
       id: entries.id,
+      applicationGroupId: entries.applicationGroupId,
       lotteryResult: entries.lotteryResult,
       resultNotifiedAt: entries.resultNotifiedAt,
       paymentStatus: entries.paymentStatus,
@@ -155,6 +157,7 @@ export async function loadLotteryContext(
 
   const entryDtos: LotteryEntryDto[] = rows.map((row) => ({
     id: row.id,
+    applicationGroupId: row.applicationGroupId,
     lotteryResult: row.lotteryResult,
     resultNotifiedAt: row.resultNotifiedAt
       ? formatDateOnly(row.resultNotifiedAt)

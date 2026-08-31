@@ -8,6 +8,7 @@ import {
   date,
   time,
   integer,
+  index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -141,6 +142,28 @@ export const performances = pgTable(
 );
 
 // -----------------------------------------------
+// 希望順位申込グループ
+// -----------------------------------------------
+
+/**
+ * 第1希望とその他希望を、1回の申込として束ねる。
+ * 独立した通常申込は applicationGroupId を持たない。
+ */
+export const applicationGroups = pgTable("application_groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productionId: uuid("production_id")
+    .notNull()
+    .references(() => productions.id, { onDelete: "cascade" }),
+  memberId: uuid("member_id")
+    .notNull()
+    .references(() => members.id),
+  firstChoicePerformanceId: uuid("first_choice_performance_id")
+    .notNull()
+    .references(() => performances.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// -----------------------------------------------
 // 申し込みエントリ
 // -----------------------------------------------
 
@@ -161,6 +184,12 @@ export const entries = pgTable(
     companionMemberId: uuid("companion_member_id").references(() => members.id),
     companionEmail: text("companion_email"),
 
+    /** 第1希望＋その他希望の申込グループ。通常申込は NULL */
+    applicationGroupId: uuid("application_group_id").references(
+      () => applicationGroups.id,
+      { onDelete: "set null" }
+    ),
+
     appliedAt: timestamp("applied_at").notNull().defaultNow(),
     lotteryResult: lotteryResultEnum("lottery_result")
       .notNull()
@@ -178,6 +207,9 @@ export const entries = pgTable(
     ticketImageUrl: text("ticket_image_url"),
   },
   (table) => ({
+    applicationGroupIndex: index("entries_application_group_idx").on(
+      table.applicationGroupId
+    ),
     uniqueEntry: uniqueIndex("unique_entry").on(
       table.performanceId,
       table.memberId
@@ -276,6 +308,7 @@ export const membersRelations = relations(members, ({ one, many }) => ({
 
 export const productionsRelations = relations(productions, ({ many }) => ({
   performances: many(performances),
+  applicationGroups: many(applicationGroups),
 }));
 
 export const performancesRelations = relations(
@@ -284,6 +317,26 @@ export const performancesRelations = relations(
     production: one(productions, {
       fields: [performances.productionId],
       references: [productions.id],
+    }),
+    entries: many(entries),
+    applicationGroups: many(applicationGroups),
+  })
+);
+
+export const applicationGroupsRelations = relations(
+  applicationGroups,
+  ({ one, many }) => ({
+    production: one(productions, {
+      fields: [applicationGroups.productionId],
+      references: [productions.id],
+    }),
+    member: one(members, {
+      fields: [applicationGroups.memberId],
+      references: [members.id],
+    }),
+    firstChoicePerformance: one(performances, {
+      fields: [applicationGroups.firstChoicePerformanceId],
+      references: [performances.id],
     }),
     entries: many(entries),
   })
@@ -303,6 +356,10 @@ export const entriesRelations = relations(entries, ({ one }) => ({
     fields: [entries.companionMemberId],
     references: [members.id],
     relationName: "companion_entries",
+  }),
+  applicationGroup: one(applicationGroups, {
+    fields: [entries.applicationGroupId],
+    references: [applicationGroups.id],
   }),
 }));
 
@@ -343,6 +400,9 @@ export type NewProduction = typeof productions.$inferInsert;
 
 export type Performance = typeof performances.$inferSelect;
 export type NewPerformance = typeof performances.$inferInsert;
+
+export type ApplicationGroup = typeof applicationGroups.$inferSelect;
+export type NewApplicationGroup = typeof applicationGroups.$inferInsert;
 
 export type Entry = typeof entries.$inferSelect;
 export type NewEntry = typeof entries.$inferInsert;

@@ -271,6 +271,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   if (performance) {
     revalidatePath(`/productions/${performance.productionId}`);
     revalidatePath(`/entries/new`);
+    revalidatePath(`/`);
   }
 
   return Response.json({ ok: true, id });

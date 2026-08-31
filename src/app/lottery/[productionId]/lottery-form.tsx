@@ -285,6 +285,7 @@ export function LotteryForm({ initial }: { initial: LotteryContext }) {
             {entries.map((entry) => {
               const summary: EntrySummaryData = {
                 id: entry.id,
+                applicationGroupId: entry.applicationGroupId,
                 companionType: entry.companionType,
                 companionEmail: entry.companionEmail,
                 member: entry.member,

@@ -9,10 +9,17 @@ type MemberRow = {
   id: string;
   label: string;
   name: string;
+  ownerUserId: string | null;
   symbol: string | null;
   themeColor: string | null;
   canPassIdVerification: boolean;
   isActive: boolean;
+};
+
+type UserOption = {
+  id: string;
+  name: string | null;
+  email: string;
 };
 
 type OshiRow = {
@@ -34,6 +41,7 @@ type ArtistRow = {
 type AppearanceData = {
   symbolCatalog: MemberSymbolEntry[];
   members: MemberRow[];
+  users: UserOption[];
   oshiList: OshiRow[];
   artistThemes: ArtistRow[];
   unregisteredArtists: string[];
@@ -80,6 +88,10 @@ export function AppearanceSettingsClient() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [newMemberLabel, setNewMemberLabel] = useState("");
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberOwnerUserId, setNewMemberOwnerUserId] = useState("");
+  const [newMemberActive, setNewMemberActive] = useState(false);
   const [newArtistLabel, setNewArtistLabel] = useState("");
   const [newArtistColor, setNewArtistColor] = useState("#38BDF8");
 
@@ -101,9 +113,11 @@ export function AppearanceSettingsClient() {
   async function saveMember(
     id: string,
     patch: {
+      ownerUserId?: string | null;
       symbol?: string | null;
       themeColor?: string | null;
       canPassIdVerification?: boolean;
+      isActive?: boolean;
     }
   ) {
     setBusy(true);
@@ -136,6 +150,51 @@ export function AppearanceSettingsClient() {
         );
         setMessage("名義を保存しました。");
       }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addMember() {
+    const label = newMemberLabel.trim();
+    const name = newMemberName.trim();
+    if (!label) {
+      setError("表示ラベルを入力してください。");
+      return;
+    }
+    if (!name) {
+      setError("氏名を入力してください。");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label,
+          name,
+          ownerUserId: newMemberOwnerUserId || null,
+          isActive: newMemberActive,
+        }),
+      });
+      const json = (await res.json()) as {
+        member?: MemberRow;
+        error?: string;
+      };
+      if (!res.ok) {
+        setError(json.error ?? "名義の追加に失敗しました。");
+        return;
+      }
+      setNewMemberLabel("");
+      setNewMemberName("");
+      setNewMemberOwnerUserId("");
+      setNewMemberActive(false);
+      setMessage("名義を追加しました。アイコン・色・顔認証可否を設定してください。");
+      await load();
     } finally {
       setBusy(false);
     }
@@ -344,14 +403,77 @@ export function AppearanceSettingsClient() {
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
         <h2 className="text-lg font-semibold text-ink">名義（アイコン・色・顔認証）</h2>
         <p className="mt-1 text-sm text-slate-500">
-          申込一覧などで使う記号と、顔認証公演で使えるかどうかを設定します。
+          申込一覧などで使う情報、担当ユーザー、有効・無効を設定します。
         </p>
+        <div className="mt-6 rounded-xl border border-slate-200 bg-surface/60 p-4">
+          <h3 className="text-base font-semibold text-ink">名義を追加</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            新規名義は安全のため無効状態で追加されます。登録期間だけ有効にしてください。
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+              表示ラベル
+              <input
+                value={newMemberLabel}
+                onChange={(e) => setNewMemberLabel(e.target.value)}
+                className={inputClassName()}
+                placeholder="例: 名義O"
+                disabled={busy}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+              氏名
+              <input
+                value={newMemberName}
+                onChange={(e) => setNewMemberName(e.target.value)}
+                className={inputClassName()}
+                placeholder="例: 前田（三宅）"
+                disabled={busy}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+              担当ユーザー
+              <select
+                value={newMemberOwnerUserId}
+                onChange={(e) => setNewMemberOwnerUserId(e.target.value)}
+                className={inputClassName()}
+                disabled={busy}
+              >
+                <option value="">未設定</option>
+                {data.users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name || user.email}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 self-end text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={newMemberActive}
+                onChange={(e) => setNewMemberActive(e.target.checked)}
+                disabled={busy}
+                className="h-4 w-4 accent-[var(--brand)]"
+              />
+              追加時から有効にする
+            </label>
+          </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void addMember()}
+            className="mt-4 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
+          >
+            名義を追加
+          </button>
+        </div>
         <ul className="mt-6 divide-y divide-slate-100">
           {data.members.map((m) => (
             <MemberEditor
               key={m.id}
               member={m}
               catalog={data.symbolCatalog}
+              users={data.users}
               disabled={busy}
               onSave={(patch) => void saveMember(m.id, patch)}
             />
@@ -446,18 +568,23 @@ export function AppearanceSettingsClient() {
 function MemberEditor({
   member,
   catalog,
+  users,
   disabled,
   onSave,
 }: {
   member: MemberRow;
   catalog: MemberSymbolEntry[];
+  users: UserOption[];
   disabled: boolean;
   onSave: (patch: {
+    ownerUserId?: string | null;
     symbol?: string | null;
     themeColor?: string | null;
     canPassIdVerification?: boolean;
+    isActive?: boolean;
   }) => void;
 }) {
+  const [ownerUserId, setOwnerUserId] = useState(member.ownerUserId ?? "");
   const [symbol, setSymbol] = useState(member.symbol ?? "");
   const [color, setColor] = useState(
     member.themeColor ?? autoThemeColor(`member:${member.id}`)
@@ -465,11 +592,14 @@ function MemberEditor({
   const [canPassIdVerification, setCanPassIdVerification] = useState(
     member.canPassIdVerification
   );
+  const [isActive, setIsActive] = useState(member.isActive);
 
   useEffect(() => {
+    setOwnerUserId(member.ownerUserId ?? "");
     setSymbol(member.symbol ?? "");
     setColor(member.themeColor ?? autoThemeColor(`member:${member.id}`));
     setCanPassIdVerification(member.canPassIdVerification);
+    setIsActive(member.isActive);
   }, [member]);
 
   return (
@@ -496,6 +626,25 @@ function MemberEditor({
             ) : null}
           </p>
         </div>
+      </div>
+
+      <div>
+        <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+          担当ユーザー
+          <select
+            value={ownerUserId}
+            onChange={(e) => setOwnerUserId(e.target.value)}
+            className={inputClassName()}
+            disabled={disabled}
+          >
+            <option value="">未設定</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name || user.email}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div>
@@ -535,8 +684,18 @@ function MemberEditor({
         <label className="flex items-center gap-2 text-sm text-ink">
           <input
             type="checkbox"
+            checked={isActive}
+            disabled={disabled}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="h-4 w-4 accent-[var(--brand)]"
+          />
+          有効
+        </label>
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
             checked={canPassIdVerification}
-            disabled={disabled || !member.isActive}
+            disabled={disabled}
             onChange={(e) => setCanPassIdVerification(e.target.checked)}
             className="h-4 w-4 accent-[var(--brand)]"
           />
@@ -547,9 +706,11 @@ function MemberEditor({
           disabled={disabled}
           onClick={() =>
             onSave({
+              ownerUserId: ownerUserId || null,
               symbol: symbol || null,
               themeColor: color,
               canPassIdVerification,
+              isActive,
             })
           }
           className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"

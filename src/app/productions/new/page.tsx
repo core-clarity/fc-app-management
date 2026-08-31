@@ -346,7 +346,7 @@ export default function NewProductionPage() {
                 2. 読み取り結果の確認・修正
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                誤読がある場合は手で直してから保存してください。
+                黒・濃灰色セルは公演なしとして読み取ります。黄色・オレンジ等の強調色や、日付が省略された複数公演は必ず確認し、誤読がある場合は手で直してから保存してください。
               </p>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
