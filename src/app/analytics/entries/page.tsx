@@ -74,7 +74,7 @@ export default async function EntryAnalyticsPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#e6edf4] px-4 py-10 text-slate-800 sm:px-8">
+    <main className="min-h-screen bg-[#d5dee8] px-4 py-10 text-slate-800 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="border-b border-slate-300/80 pb-6">
           <PageBackNav links={[{ href: "/", label: "ホームへ" }]} />
