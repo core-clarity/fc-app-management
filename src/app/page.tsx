@@ -249,7 +249,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     ) : (
                       <>
                         <span
-                          className="inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-brand/20 bg-brand-soft px-1.5 py-0.5 text-slate-700"
+                          className={
+                            p.pendingCount > 0
+                              ? "inline-flex items-center gap-1 whitespace-nowrap rounded-md border-2 border-brand bg-brand-soft px-1.5 py-0.5 text-slate-700"
+                              : "inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-brand/20 bg-brand-soft px-1.5 py-0.5 text-slate-700"
+                          }
                           title="当落の集計"
                         >
                           <Send
@@ -269,7 +273,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         </span>
                         {p.wonCount > 0 ? (
                           <span
-                            className="inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-slate-700"
+                            className={
+                              p.unpaidCount > 0
+                                ? "inline-flex items-center gap-1 whitespace-nowrap rounded-md border-2 border-amber-500 bg-amber-50 px-1.5 py-0.5 text-slate-700"
+                                : "inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-slate-700"
+                            }
                             title="入金の集計"
                           >
                             <Landmark
