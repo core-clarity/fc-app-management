@@ -13,6 +13,34 @@ type HomePageProps = {
   };
 };
 
+type ProductionRunStatus = "upcoming" | "ongoing" | "ended" | "unscheduled";
+
+const RUN_STATUS_BADGE: Record<
+  ProductionRunStatus,
+  { label: string; className: string }
+> = {
+  ended: {
+    label: "終了",
+    className:
+      "rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600",
+  },
+  unscheduled: {
+    label: "日程未設定",
+    className:
+      "rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-500",
+  },
+  upcoming: {
+    label: "公演前",
+    className:
+      "rounded-full border border-brand/30 bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-dark",
+  },
+  ongoing: {
+    label: "公演中",
+    className:
+      "rounded-full border border-brand/40 bg-brand px-2 py-0.5 text-xs font-semibold text-white",
+  },
+};
+
 function getTodayInJst(): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Tokyo",
@@ -26,6 +54,17 @@ function getTodayInJst(): string {
   return `${year}-${month}-${day}`;
 }
 
+function getProductionRunStatus(
+  firstDate: string | null,
+  lastDate: string | null,
+  todayJst: string
+): ProductionRunStatus {
+  if (firstDate === null || lastDate === null) return "unscheduled";
+  if (todayJst > lastDate) return "ended";
+  if (todayJst < firstDate) return "upcoming";
+  return "ongoing";
+}
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const session = await auth();
 
@@ -36,6 +75,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       artist: productions.artist,
       companionTiming: productions.companionTiming,
       performanceCount: sql<number>`count(distinct ${performances.id})::int`,
+      firstPerformanceDate: sql<string | null>`min(${performances.performanceDate})`,
       lastPerformanceDate: sql<string | null>`max(${performances.performanceDate})`,
       entryCount: sql<number>`count(${entries.id})::int`,
       pendingCount: sql<number>`count(${entries.id}) filter (where ${entries.lotteryResult} = 'pending')::int`,
@@ -61,15 +101,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     );
 
   const todayJst = getTodayInJst();
-  const productionListWithStatus = productionList.map((production) => ({
-    ...production,
-    isActive:
-      production.lastPerformanceDate !== null &&
-      production.lastPerformanceDate >= todayJst,
-    isEnded:
-      production.lastPerformanceDate !== null &&
-      production.lastPerformanceDate < todayJst,
-  }));
+  const productionListWithStatus = productionList.map((production) => {
+    const runStatus = getProductionRunStatus(
+      production.firstPerformanceDate,
+      production.lastPerformanceDate,
+      todayJst
+    );
+    return {
+      ...production,
+      runStatus,
+      isActive: runStatus === "upcoming" || runStatus === "ongoing",
+    };
+  });
   const activeOnly = searchParams?.status === "active";
   const visibleProductionList = activeOnly
     ? productionListWithStatus.filter((production) => production.isActive)
@@ -179,15 +222,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     className="block group"
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      {p.isEnded ? (
-                        <span className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                          終了
-                        </span>
-                      ) : p.lastPerformanceDate === null ? (
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-500">
-                          日程未設定
-                        </span>
-                      ) : null}
+                      <span className={RUN_STATUS_BADGE[p.runStatus].className}>
+                        {RUN_STATUS_BADGE[p.runStatus].label}
+                      </span>
                       <p className="text-base font-semibold text-ink group-hover:text-brand-dark">
                         {p.title}
                       </p>
@@ -281,7 +318,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
             <Link
               href="/analytics/entries"
-              className="inline-flex rounded-lg border border-brand/40 bg-white px-4 py-3 text-base font-semibold text-brand-dark transition hover:bg-brand-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="inline-flex rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               エントリーの分析
             </Link>
