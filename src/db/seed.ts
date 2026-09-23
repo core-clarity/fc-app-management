@@ -104,6 +104,15 @@ const SEED_MEMBERS: SeedMember[] = [
     isActive: true,
   },
   {
+    label: "名義Y",
+    name: "Yosuke（ジュニア情報局）",
+    ownerEmail: "otsukait666@gmail.com",
+    symbol: "cra",
+    themeColor: "#EF4444",
+    canPassIdVerification: true,
+    isActive: true,
+  },
+  {
     label: "不明",
     name: "不明",
     ownerEmail: null,
