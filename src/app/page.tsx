@@ -110,13 +110,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     return {
       ...production,
       runStatus,
-      isActive: runStatus === "upcoming" || runStatus === "ongoing",
+      isActive: runStatus !== "ended",
     };
   });
-  const activeOnly = searchParams?.status === "active";
-  const visibleProductionList = activeOnly
-    ? productionListWithStatus.filter((production) => production.isActive)
-    : productionListWithStatus;
+  const showAll = searchParams?.status === "all";
+  const visibleProductionList = showAll
+    ? productionListWithStatus
+    : productionListWithStatus.filter((production) => production.isActive);
 
   return (
     <main className="min-h-screen bg-surface px-4 py-10 sm:px-8">
@@ -152,9 +152,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </header>
 
         <section className="mt-8 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ink">メニュー</h2>
+          <h2 className="text-lg font-semibold text-ink">公演登録</h2>
           <p className="mt-2 text-base leading-relaxed text-slate-600">
-            公演登録・公演日程・エントリ作成・当落一括入力・エントリ詳細（座席・金額）が利用できます。過去データの分析は下の「分析」から。
+            新しい公演を追加します。日程・申込・当落は下の「申込・当落」から進めます。
           </p>
           <div className="mt-6">
             <Link
@@ -169,9 +169,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-ink">登録済み公演</h2>
+              <h2 className="text-lg font-semibold text-ink">申込・当落</h2>
               <p className="mt-2 text-sm text-slate-500">
-                当落・入金の件数は全名義の合計です。
+                公演ごとの申込・当落・入金です。件数は全名義の合計です。
               </p>
             </div>
             <div
@@ -183,25 +183,25 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 href="/"
                 prefetch={false}
                 className={
-                  !activeOnly
+                  !showAll
                     ? "rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-slate-200/80"
                     : "rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:text-ink"
                 }
-                aria-current={!activeOnly ? "page" : undefined}
-              >
-                すべて
-              </Link>
-              <Link
-                href="/?status=active"
-                prefetch={false}
-                className={
-                  activeOnly
-                    ? "rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-slate-200/80"
-                    : "rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:text-ink"
-                }
-                aria-current={activeOnly ? "page" : undefined}
+                aria-current={!showAll ? "page" : undefined}
               >
                 終了していない公演
+              </Link>
+              <Link
+                href="/?status=all"
+                prefetch={false}
+                className={
+                  showAll
+                    ? "rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-slate-200/80"
+                    : "rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:text-ink"
+                }
+                aria-current={showAll ? "page" : undefined}
+              >
+                すべて
               </Link>
             </div>
           </div>
@@ -211,7 +211,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </p>
           ) : visibleProductionList.length === 0 ? (
             <p className="mt-4 text-base text-slate-600">
-              終了していない公演はありません。
+              終了していない公演はありません。終了済みは「すべて」から確認できます。
             </p>
           ) : (
             <ul className="mt-4 divide-y divide-slate-100">
@@ -340,7 +340,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ink">管理</h2>
+          <h2 className="text-lg font-semibold text-ink">設定</h2>
           <p className="mt-2 text-base leading-relaxed text-slate-600">
             見た目の設定と、過去観覧ログの修正です。
           </p>
